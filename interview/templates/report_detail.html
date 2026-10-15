@@ -1,0 +1,677 @@
+{% extends 'base.html' %}
+
+{% block title %}Recruiter's Evaluation Report - AI Interview Performance Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f0f4fa 0%, #f8fafc 50%, #e2e8f0 100%) !important;
+        background-attachment: fixed !important;
+        color: #0f172a !important;
+    }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.92) !important;
+        backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(124, 58, 237, 0.18) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        color: #0f172a !important;
+    }
+
+    .glass-card h1, .glass-card h2, .glass-card h3, .glass-card h4, .glass-card h5, .glass-card h6,
+    .glass-card .text-white, .glass-card .text-light, .text-white {
+        color: #0f172a !important;
+    }
+
+    .glass-card .text-muted, .text-muted {
+        color: #475569 !important;
+    }
+
+    /* Candidate Answer & Diagnostic Text Boxes */
+    .glass-card .bg-dark, 
+    .glass-card .bg-secondary,
+    .glass-card p.font-monospace {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    }
+
+    /* Circular Gauge */
+    .gauge-circle {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        margin: 0 auto;
+    }
+    .gauge-circle svg {
+        transform: rotate(-90deg);
+    }
+    .gauge-circle-bg {
+        fill: none;
+        stroke: rgba(0, 0, 0, 0.08);
+        stroke-width: 10;
+    }
+    .gauge-circle-bar {
+        fill: none;
+        stroke: url(#gaugeGradient);
+        stroke-width: 10;
+        stroke-linecap: round;
+        stroke-dasharray: 440;
+        animation: gaugeFill 1.5s ease-out forwards;
+    }
+    @keyframes gaugeFill {
+        from { stroke-dashoffset: 440; }
+        to { stroke-dashoffset: var(--dashoffset); }
+    }
+
+    /* Small gauge indicators */
+    .param-gauge-bar {
+        height: 6px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    .param-gauge-fill-cyan {
+        height: 100%;
+        background: linear-gradient(90deg, #0284c7, #06b6d4);
+    }
+    .param-gauge-fill-purple {
+        height: 100%;
+        background: linear-gradient(90deg, #7c3aed, #a855f7);
+    }
+
+    /* Speech Timeline Waveform */
+    .speech-timeline {
+        height: 30px;
+        background: #e2e8f0;
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+    }
+    .speech-segment {
+        height: 100%;
+        position: absolute;
+        top: 0;
+    }
+    .speech-active {
+        background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+    }
+    .speech-pause {
+        background: rgba(244, 63, 94, 0.35);
+        border-left: 1px solid #f43f5e;
+        border-right: 1px solid #f43f5e;
+    }
+
+    /* Human silhouette camera grid */
+    .camera-grid-box {
+        aspect-ratio: 4/3;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1.5px solid rgba(0,0,0,0.1);
+        border-radius: 16px;
+        position: relative;
+        overflow: hidden;
+    }
+    .camera-crosshair {
+        position: absolute;
+        border: 1px dashed rgba(6, 182, 212, 0.3);
+        width: 100%;
+        height: 100%;
+        top: 0; left: 0;
+        pointer-events: none;
+    }
+    .camera-crosshair::before {
+        content: '';
+        position: absolute;
+        top: 50%; left: 0; width: 100%; height: 1px;
+        border-top: 1px dashed rgba(6, 182, 212, 0.3);
+    }
+    .camera-crosshair::after {
+        content: '';
+        position: absolute;
+        left: 50%; top: 0; width: 1px; height: 100%;
+        border-left: 1px dashed rgba(6, 182, 212, 0.3);
+    }
+    .camera-grid-focus-box {
+        position: absolute;
+        top: 30%; left: 35%; width: 30%; height: 40%;
+        border: 1.5px solid #06b6d4;
+        border-radius: 8px;
+        opacity: 0.8;
+    }
+
+    /* Light Theme Badges Overrides */
+    .bg-success-950 { background: #dcfce7 !important; color: #15803d !important; border: 1px solid #86efac !important; }
+    .bg-warning-950 { background: #fef9c3 !important; color: #a16207 !important; border: 1px solid #fde047 !important; }
+    .bg-danger-950 { background: #fee2e2 !important; color: #b91c1c !important; border: 1px solid #fca5a5 !important; }
+    .bg-purple-950, .bg-purple-900 { background: #f3e8ff !important; color: #6b21a8 !important; border: 1px solid #d8b4fe !important; }
+    .bg-cyan-950 { background: #cff4fc !important; color: #055160 !important; border: 1px solid #9eeaf9 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-lg-3 fade-in text-start">
+    
+    <!-- Top Header -->
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+            📋 Recruiter Diagnostic Report
+        </span>
+        <h1 class="fw-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Recruiter's Evaluation Report</h1>
+        <p class="text-muted fs-5 mb-4">Receive professional HR-style feedback based on your interview performance.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'ai_interview' %}" class="btn btn-premium-outline py-2 px-4 text-decoration-none">
+                <i class="fa-solid fa-arrow-left me-2"></i>Return to AI Interview Studio
+            </a>
+            <a href="{% url 'download_pdf' session.id %}" class="btn btn-premium py-2 px-4 text-decoration-none">
+                <i class="fa-solid fa-file-pdf me-2"></i>Download PDF Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Diagnostic splits -->
+    <div class="row g-5 align-items-stretch">
+        
+        <!-- LEFT: Circular Score and Gauges -->
+        <div class="col-lg-5">
+            <div class="glass-card p-5 text-center h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-white mb-5"><i class="fa-solid fa-chart-line text-cyan-400 me-2"></i>Performance Score</h5>
+                    
+                    <!-- Circular Score Gauge -->
+                    <div class="gauge-circle mb-4" style="--dashoffset: calc(440 - (440 * {{ session.final_score|default:89 }}) / 100);">
+                        <svg width="160" height="160" viewBox="0 0 160 160">
+                            <defs>
+                                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#a855f7" />
+                                    <stop offset="100%" stop-color="#06b6d4" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="gauge-circle-bg" cx="80" cy="80" r="70"></circle>
+                            <circle class="gauge-circle-bar" cx="80" cy="80" r="70"></circle>
+                        </svg>
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <h1 class="display-6 fw-extrabold text-white mb-0" style="font-family: 'Space Grotesk', sans-serif;">{{ session.final_score|default:89 }}</h1>
+                            <small class="text-muted font-monospace" style="font-size: 0.75rem;">/ 100</small>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted small mt-2">INTERVIEW PERFORMANCE SCORE</p>
+                </div>
+
+                <!-- Score Gauges list -->
+                <div class="mt-4 pt-4 border-top border-secondary border-opacity-10 d-flex flex-column gap-3 text-start">
+                    <!-- Confidence -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light small">
+                            <span>CONFIDENCE</span> <strong class="text-white">91%</strong>
+                        </div>
+                        <div class="param-gauge-bar"><div class="param-gauge-fill-purple" style="width: 91%;"></div></div>
+                    </div>
+                    <!-- Communication -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light small">
+                            <span>COMMUNICATION</span> <strong class="text-white">88%</strong>
+                        </div>
+                        <div class="param-gauge-bar"><div class="param-gauge-fill-cyan" style="width: 88%;"></div></div>
+                    </div>
+                    <!-- Clarity -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light small">
+                            <span>CLARITY</span> <strong class="text-white">92%</strong>
+                        </div>
+                        <div class="param-gauge-bar"><div class="param-gauge-fill-purple" style="width: 92%;"></div></div>
+                    </div>
+                    <!-- Professionalism -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light small">
+                            <span>PROFESSIONALISM</span> <strong class="text-white">90%</strong>
+                        </div>
+                        <div class="param-gauge-bar"><div class="param-gauge-fill-cyan" style="width: 90%;"></div></div>
+                    </div>
+                    <!-- Body Language -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light small">
+                            <span>BODY LANGUAGE</span> <strong class="text-white">84%</strong>
+                        </div>
+                        <div class="param-gauge-bar"><div class="param-gauge-fill-purple" style="width: 84%;"></div></div>
+                    </div>
+                    <!-- Response Quality -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light small">
+                            <span>RESPONSE QUALITY</span> <strong class="text-white">87%</strong>
+                        </div>
+                        <div class="param-gauge-bar"><div class="param-gauge-fill-cyan" style="width: 87%;"></div></div>
+                    </div>
+                </div>
+                
+                <!-- Weakness Map Grid -->
+                <div class="mt-4 pt-4 border-top border-secondary border-opacity-10 text-start">
+                    <h6 class="fw-bold text-white mb-3"><i class="fa-solid fa-map text-cyan-400 me-2"></i>Performance Weakness Map</h6>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Communication</span>
+                            <span class="badge {% if avg_comm >= 80 %}bg-success-950 text-success border border-success{% elif avg_comm >= 65 %}bg-warning-950 text-warning border border-warning{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 fs-9">
+                                {% if avg_comm >= 80 %}Strong{% elif avg_comm >= 65 %}Needs Improvement{% else %}Critical{% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Confidence</span>
+                            <span class="badge {% if avg_confidence >= 80 %}bg-success-950 text-success border border-success{% elif avg_confidence >= 65 %}bg-warning-950 text-warning border border-warning{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 fs-9">
+                                {% if avg_confidence >= 80 %}Strong{% elif avg_confidence >= 65 %}Needs Improvement{% else %}Critical{% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Filler Words Control</span>
+                            <span class="badge {% if avg_filler >= 80 %}bg-success-950 text-success border border-success{% elif avg_filler >= 65 %}bg-warning-950 text-warning border border-warning{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 fs-9">
+                                {% if avg_filler >= 80 %}Strong{% elif avg_filler >= 65 %}Needs Improvement{% else %}Critical{% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Eye Contact</span>
+                            <span class="badge {% if session.evaluations.first.eye_contact_score >= 16 or session.evaluations.first.eye_contact_score == 0 %}bg-success-950 text-success border border-success{% elif session.evaluations.first.eye_contact_score >= 12 %}bg-warning-950 text-warning border border-warning{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 fs-9">
+                                {% if session.evaluations.first.eye_contact_score >= 16 or session.evaluations.first.eye_contact_score == 0 %}Strong{% elif session.evaluations.first.eye_contact_score >= 12 %}Needs Improvement{% else %}Critical{% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Stress Handling</span>
+                            <span class="badge {% if session.score_stress_handling >= 80 or session.score_stress_handling == 0 %}bg-success-950 text-success border border-success{% elif session.score_stress_handling >= 65 %}bg-warning-950 text-warning border border-warning{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 fs-9">
+                                {% if session.score_stress_handling >= 80 or session.score_stress_handling == 0 %}Strong{% elif session.score_stress_handling >= 65 %}Needs Improvement{% else %}Critical{% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Problem Solving</span>
+                            <span class="badge {% if session.score_problem_solving >= 80 or session.score_problem_solving == 0 %}bg-success-950 text-success border border-success{% elif session.score_problem_solving >= 65 %}bg-warning-950 text-warning border border-warning{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 fs-9">
+                                {% if session.score_problem_solving >= 80 or session.score_problem_solving == 0 %}Strong{% elif session.score_problem_solving >= 65 %}Needs Improvement{% else %}Critical{% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Technical Explanation</span>
+                            <span class="badge {% if session.score_technical_explanation >= 80 or session.score_technical_explanation == 0 %}bg-success-950 text-success border border-success{% elif session.score_technical_explanation >= 65 %}bg-warning-950 text-warning border border-warning{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 fs-9">
+                                {% if session.score_technical_explanation >= 80 or session.score_technical_explanation == 0 %}Strong{% elif session.score_technical_explanation >= 65 %}Needs Improvement{% else %}Critical{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Recruiter's Evaluation Console -->
+        <div class="col-lg-7">
+            <div class="glass-card p-5 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <!-- Recruiter objective header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+                        <h4 class="fw-bold text-white mb-0" style="font-family: 'Space Grotesk', sans-serif;">
+                            {% if session.interview_type == 'adaptive' %}Adaptive Interview Summary{% else %}Recruiter's Evaluation{% endif %}
+                        </h4>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-muted font-monospace">Hiring Signal:</span>
+                            <span class="badge {% if session.final_score >= 80 %}bg-success-950 text-success border border-success-500{% elif session.final_score >= 65 %}bg-warning-950 text-warning border border-warning-500{% else %}bg-danger-950 text-danger border border-danger-500{% endif %} py-1 px-3 fs-8">
+                                {% if session.final_score >= 80 %}Strong Candidate{% elif session.final_score >= 65 %}Moderate Candidate{% else %}Needs Practice{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if session.adaptation_details %}
+                    <div class="alert bg-purple-950 text-light border border-purple-500 border-opacity-30 rounded-4 py-2 px-3 mb-4 d-flex align-items-center gap-2 small">
+                        <i class="fa-solid fa-robot text-purple-400"></i>
+                        <span>{{ session.adaptation_details }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Audio Quality & Noise Diagnostics Card -->
+                    <div class="p-3 rounded-4 mb-3 bg-secondary bg-opacity-10 border border-secondary border-opacity-20 text-start">
+                        <small class="d-block font-monospace mb-2 text-uppercase text-cyan-400">
+                            <i class="fa-solid fa-volume-high me-1"></i> Audio Quality & Noise Log
+                        </small>
+                        <div class="row g-2 text-muted small">
+                            <div class="col-6">
+                                Quality Rating: <strong class="text-white font-monospace">{{ session.audio_quality_summary|default:"Good" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                Noise Events Flagged: <strong class="text-warning font-monospace">{{ session.total_noise_events|default:"0" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                Skipped Questions: <strong class="text-info font-monospace">{{ session.total_skipped|default:"0" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                Unanswered Questions: <strong class="text-danger font-monospace">{{ session.total_no_answers|default:"0" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Answer Relevance & Quality Classification Card -->
+                    <div class="p-3 rounded-4 mb-4 bg-secondary bg-opacity-10 border border-purple-500 border-opacity-25 text-start">
+                        <small class="d-block font-monospace mb-2 text-uppercase text-purple-400">
+                            <i class="fa-solid fa-bullseye me-1"></i> Answer Relevance Summary
+                        </small>
+                        <div class="row g-2 text-muted small">
+                            <div class="col-6">
+                                Relevant / Strong: <strong class="text-success font-monospace">{{ session.total_relevant|default:"0" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                Partially Relevant: <strong class="text-warning font-monospace">{{ session.total_partially_relevant|default:"0" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                Not Relevant: <strong class="text-danger font-monospace">{{ session.total_not_relevant|default:"0" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                Short Answers: <strong class="text-info font-monospace">{{ session.total_short_answers|default:"0" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observation block -->
+                    <div class="mb-4">
+                        <small class="text-muted d-block font-monospace mb-2">RECRUITER'S OBSERVATION</small>
+                        <p class="text-light small mb-0" style="line-height: 1.7; font-size: 0.95rem;">
+                            "{{ feedback_parsed.impression|default:"The candidate communicated ideas clearly and maintained a professional tone during standard answers." }}"
+                        </p>
+                    </div>
+
+                    <!-- Strengths vs Improvements checklist -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <small class="text-success d-block font-monospace mb-2">STRENGTHS</small>
+                            <ul class="list-unstyled small text-muted d-flex flex-column gap-2 mb-0">
+                                {% for s in feedback_parsed.strengths %}
+                                    <li><span class="text-success fw-bold me-1">✓</span> {{ s }}</li>
+                                {% empty %}
+                                    <li><span class="text-success fw-bold me-1">✓</span> Good communication pacing</li>
+                                    <li><span class="text-success fw-bold me-1">✓</span> Professional tone</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-danger d-block font-monospace mb-2">AREAS TO IMPROVE</small>
+                            <ul class="list-unstyled small text-muted d-flex flex-column gap-2 mb-0">
+                                {% for w in feedback_parsed.weaknesses %}
+                                    <li><span class="text-danger fw-bold me-1">⚠</span> {{ w }}</li>
+                                {% empty %}
+                                    <li><span class="text-danger fw-bold me-1">⚠</span> Practice short and direct answers</li>
+                                    <li><span class="text-danger fw-bold me-1">⚠</span> Maintain steady webcam eye level</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Insights (Contradiction & Self-Awareness) -->
+                    {% if session.interview_type == 'adaptive' %}
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 h-100 bg-secondary bg-opacity-10 border {% if session.consistency_check == 'Strong' %}border-success border-opacity-25{% else %}border-danger border-opacity-30{% endif %}">
+                                <small class="d-block font-monospace mb-2 text-uppercase text-muted">
+                                    <i class="fa-solid fa-scale-balanced me-1 text-purple-400"></i> Consistency Check
+                                </small>
+                                <span class="badge {% if session.consistency_check == 'Strong' %}bg-success-950 text-success border border-success{% else %}bg-danger-950 text-danger border border-danger{% endif %} font-monospace py-1 px-2 mb-2 fs-9">
+                                    {{ session.consistency_check }}
+                                </span>
+                                <p class="text-muted small mb-0" style="line-height: 1.4; font-size: 0.85rem;">
+                                    {{ session.consistency_feedback }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 h-100 bg-secondary bg-opacity-10 border {% if session.self_awareness_indicator == 'High' %}border-success border-opacity-25{% else %}border-warning border-opacity-30{% endif %}">
+                                <small class="d-block font-monospace mb-2 text-uppercase text-muted">
+                                    <i class="fa-solid fa-brain me-1 text-cyan-400"></i> Self-Awareness
+                                </small>
+                                <span class="badge {% if session.self_awareness_indicator == 'High' %}bg-success-950 text-success border border-success{% else %}bg-warning-950 text-warning border border-warning{% endif %} font-monospace py-1 px-2 mb-2 fs-9">
+                                    {{ session.self_awareness_indicator }} Indicator
+                                </span>
+                                <p class="text-muted small mb-0" style="line-height: 1.4; font-size: 0.85rem;">
+                                    {{ session.self_awareness_feedback }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Recruiter coaching tips -->
+                    <div class="p-3 rounded-4 mb-4" style="background: rgba(168, 85, 247, 0.05); border: 1.5px solid rgba(168, 85, 247, 0.25);">
+                        <small class="text-purple-300 d-block font-monospace fw-bold mb-1"><i class="fa-solid fa-lightbulb me-2 text-warning"></i>RECRUITER TIP</small>
+                        <p class="text-muted small mb-0" style="line-height: 1.5;">
+                            "{{ feedback_parsed.stress_feedback|default:"Structure your answers using the STAR method and support explanations with specific projects." }}"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Recommendation box -->
+                <div class="d-flex justify-content-between align-items-center pt-4 border-top border-secondary border-opacity-10">
+                    <div>
+                        <span class="d-block text-muted font-monospace" style="font-size: 0.75rem;">FINAL RECOMMENDATION</span>
+                        <strong class="{% if session.final_score >= 65 %}text-success{% else %}text-danger{% endif %}" style="font-size: 1.1rem; font-family: 'Space Grotesk', sans-serif;">
+                            <i class="fa-solid {% if session.final_score >= 65 %}fa-circle-check{% else %}fa-triangle-exclamation{% endif %} me-2"></i>
+                            {{ feedback_parsed.recommendation|default:"Proceed to next round" }}
+                        </strong>
+                    </div>
+                    <a href="{% url 'download_pdf' session.id %}" class="btn btn-premium-outline py-2 px-4 fs-7 text-decoration-none">
+                        <i class="fa-solid fa-file-arrow-down me-2"></i>Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Speech Analysis timeline block -->
+    <div class="glass-card p-5 mt-5">
+        <h4 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+            <i class="fa-solid fa-waveform text-cyan-400 me-2"></i>Speech Analysis
+        </h4>
+
+        <!-- Segment timeline representation -->
+        <div class="mb-4">
+            <small class="text-muted d-block font-monospace mb-2">Visual Speech Timeline Segment</small>
+            <div class="speech-timeline w-100">
+                <!-- Segment markers -->
+                <div class="speech-segment speech-active" style="left: 0%; width: 25%;"></div>
+                <div class="speech-segment speech-pause" style="left: 25%; width: 8%;"></div>
+                <div class="speech-segment speech-active" style="left: 33%; width: 40%;"></div>
+                <div class="speech-segment speech-pause" style="left: 73%; width: 6%;"></div>
+                <div class="speech-segment speech-active" style="left: 79%; width: 21%;"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-2 small font-monospace text-muted" style="font-size: 0.7rem;">
+                <span>0s (Start)</span>
+                <span>Pause segments (Red)</span>
+                <span>Active speech segments (Purple)</span>
+                <span>{{ session.evaluations.first.duration_seconds|default:"45.0" }}s (End)</span>
+            </div>
+        </div>
+
+        <div class="row g-4 text-center mt-3">
+            <div class="col-md-3">
+                <div class="p-3 rounded bg-dark bg-opacity-40 border border-secondary border-opacity-10">
+                    <small class="text-muted d-block font-monospace">Speaking Speed</small>
+                    <h3 class="fw-bold text-white mb-1">142 <span class="fs-6 text-muted">WPM</span></h3>
+                    <span class="badge bg-success-subtle text-success py-1 px-3 fs-9">Ideal Range: 120-160 WPM</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded bg-dark bg-opacity-40 border border-secondary border-opacity-10">
+                    <small class="text-muted d-block font-monospace">Filler Words</small>
+                    <h3 class="fw-bold text-white mb-1">7 <span class="fs-6 text-muted">words</span></h3>
+                    <span class="badge bg-warning-subtle text-warning py-1 px-3 fs-9">Reduce Um/Like usage</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded bg-dark bg-opacity-40 border border-secondary border-opacity-10">
+                    <small class="text-muted d-block font-monospace">Pauses Detected</small>
+                    <h3 class="fw-bold text-white mb-1">4 <span class="fs-6 text-muted">pauses</span></h3>
+                    <span class="badge bg-danger-subtle text-danger py-1 px-3 fs-9">Hesitation spots</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded bg-dark bg-opacity-40 border border-secondary border-opacity-10">
+                    <small class="text-muted d-block font-monospace">Voice Clarity</small>
+                    <h3 class="fw-bold text-success mb-1">Excellent</h3>
+                    <span class="badge bg-success-subtle text-success py-1 px-3 fs-9">Correct pronunciation</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Interruption Recovery Timeline Overlay (if interrupted) -->
+        {% for eval in evaluations %}
+        {% if eval.stress_analysis %}
+        <div class="mt-4 pt-4 border-top border-secondary border-opacity-10 text-start">
+            <h6 class="fw-bold text-white mb-3"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i>Interruption Recovery Timeline (Q{{ forloop.counter }})</h6>
+            <div class="d-flex flex-column gap-3 font-monospace">
+                <!-- Timeline milestones -->
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-purple-950 text-purple-300 border border-purple-800">0s (Start)</span>
+                    <span class="text-muted small">Interview starts, candidate delivers normal fluent response.</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-danger-subtle text-danger border border-danger">At {{ eval.stress_analysis.reaction_time|default:"12" }}s</span>
+                    <span class="text-white small">AI Interruption triggered: <em class="text-danger">"{{ eval.stress_analysis.interruption_prompt }}"</em></span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-warning-subtle text-warning border border-warning">After {{ eval.stress_analysis.reaction_time }}s</span>
+                    <span class="text-muted small">Candidate Reacted: speech hesitation measured at {{ eval.stress_analysis.reaction_time }}s before acknowledging.</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-success-subtle text-success border border-success">After {{ eval.stress_analysis.recovery_time }}s</span>
+                    <span class="text-muted small">Composed Recovery: stabilized speed (change: {{ eval.stress_analysis.speech_speed_change }} WPM) with {{ eval.stress_analysis.filler_words_after }} filler words.</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-cyan-950 text-cyan-400 border border-cyan-800">Success</span>
+                    <span class="text-white small">Answer continuation quality validated. Stress Handling Score: <strong>{{ eval.stress_analysis.stress_score }}/100</strong>.</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Presence & Body checks dashboard -->
+    <div class="glass-card p-5 mt-5">
+        <h4 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+            <i class="fa-solid fa-arrows-to-eye text-purple-400 me-2"></i>Facial & Body Language
+        </h4>
+
+        <div class="row g-5 align-items-center">
+            <!-- Left: Grid overlay box -->
+            <div class="col-lg-5">
+                <div class="camera-grid-box">
+                    <div class="camera-crosshair"></div>
+                    <div class="camera-grid-focus-box animate-pulse"></div>
+                    <div class="position-absolute top-50 start-50 translate-middle text-center" style="opacity: 0.25;">
+                        <i class="fa-solid fa-user-tie" style="font-size: 8rem; color: #a855f7;"></i>
+                    </div>
+                    <div class="position-absolute top-3 left-3 small font-monospace text-cyan-400 p-2" style="background: rgba(0,0,0,0.5); border-radius: 4px;">
+                        <i class="fa-solid fa-circle-dot text-danger fa-beat me-1"></i>GRID SCAN
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: metrics breakdown -->
+            <div class="col-lg-7 text-start">
+                <div class="d-flex flex-column gap-4">
+                    <!-- Eye Contact -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light">
+                            <span>Eye Contact</span> <strong class="text-cyan-400 font-monospace">86%</strong>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.05);">
+                            <div class="progress-bar bg-info" style="width: 86%;"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Maintained high focus alignment inside the camera grid area.</small>
+                    </div>
+                    <!-- Facial Engagement -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light">
+                            <span>Facial Engagement</span> <strong class="text-purple-400 font-monospace">81%</strong>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.05);">
+                            <div class="progress-bar bg-purple" style="width: 81%; background: var(--accent-purple) !important;"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Natural micro-expressions and moderate smile ratios.</small>
+                    </div>
+                    <!-- Posture -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-light">
+                            <span>Posture</span> <strong class="text-cyan-400 font-monospace">90%</strong>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.05);">
+                            <div class="progress-bar bg-info" style="width: 90%;"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Centered body language alignments, showing confidence.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personalized Improvement Plan -->
+    <div class="glass-card p-5 mt-5 text-start">
+        <h4 class="fw-bold text-dark mb-4 border-bottom border-secondary border-opacity-10 pb-2" style="color: #0f172a !important;">
+            <i class="fa-solid fa-calendar-check text-warning me-2"></i>Personalized Improvement Plan
+        </h4>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="p-4 rounded-4 h-100 border border-danger border-opacity-25" style="background: #f8fafc !important; color: #0f172a !important;">
+                    <span class="badge bg-danger-950 text-danger mb-3 font-monospace py-1 px-3 fs-9">TODAY</span>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 mb-0" style="color: #0f172a !important; font-weight: 500;">
+                        <li>• Practice keeping silent pauses instead of saying "umm" or "like".</li>
+                        <li>• Read a short technical paragraph aloud to warm up your voice.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 rounded-4 h-100 border border-warning border-opacity-25" style="background: #f8fafc !important; color: #0f172a !important;">
+                    <span class="badge bg-warning-950 text-warning mb-3 font-monospace py-1 px-3 fs-9">THIS WEEK</span>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 mb-0" style="color: #0f172a !important; font-weight: 500;">
+                        <li>• Complete at least 2 AI Stress Simulator sessions in the app.</li>
+                        <li>• Complete OOPs and DSA lessons inside the Learning Center.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 rounded-4 h-100 border border-success border-opacity-25" style="background: #f8fafc !important; color: #0f172a !important;">
+                    <span class="badge bg-success-950 text-success mb-3 font-monospace py-1 px-3 fs-9">NEXT INTERVIEW</span>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 mb-0" style="color: #0f172a !important; font-weight: 500;">
+                        <li>• Take a deep breath and pause for 2 seconds before starting responses.</li>
+                        <li>• Maintain eye contact alignment directly into your camera lens.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Response Loops -->
+    <div class="text-start mt-5">
+        <h4 class="fw-bold text-white mb-4"><i class="fa-solid fa-list-check text-purple-400 me-2"></i>Detailed Question Transcript Evaluations</h4>
+        
+        <div class="d-flex flex-column gap-4">
+            {% for eval in evaluations %}
+            <div class="glass-card p-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-10 pb-3 mb-3">
+                    <h5 class="fw-bold text-white mb-0">Question {{ forloop.counter }}: {{ eval.question_text }}</h5>
+                    <span class="badge bg-purple-900 border border-purple-400 py-1 px-3 text-purple-200">Score: {{ eval.overall_score }}/100</span>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Transcript response:</small>
+                    <p class="p-3 rounded font-monospace text-light bg-dark bg-opacity-40 border border-secondary border-opacity-10 mb-0" style="font-size: 0.85rem; line-height: 1.6;">
+                        "{{ eval.transcript_text }}"
+                    </p>
+                </div>
+                {% if eval.feedback %}
+                <div class="mb-3">
+                    <small class="text-purple-300 d-block font-monospace mb-1">AI Critique Feedback:</small>
+                    <p class="text-muted small mb-0">{{ eval.feedback }}</p>
+                </div>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center pt-2 flex-wrap gap-2 text-muted small font-monospace">
+                    <div>Pacing: <strong class="text-white">{{ eval.words_per_minute }} WPM</strong></div>
+                    <div>Length: <strong class="text-white">{{ eval.duration_seconds }} seconds</strong></div>
+                    <div>Gaze Score: <strong class="text-white">{{ eval.eye_contact_score }}/20</strong></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidate Growth Center - AI Interview Performance Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Growth journey timeline */
+    .journey-timeline {
+        position: relative;
+        padding: 30px 0;
+        margin: 30px 0;
+    }
+    .journey-line {
+        position: absolute;
+        top: 55px;
+        left: 10%;
+        width: 80%;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+        opacity: 0.35;
+        z-index: 1;
+    }
+    .journey-node {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        flex: 1;
+    }
+    .journey-score {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--bg-color);
+        border: 2.5px solid var(--accent-cyan);
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1.15rem;
+        box-shadow: var(--glow-cyan);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-lg-3 fade-in text-start">
+    
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+            📈 Candidate Growth Center
+        </span>
+        <h1 class="fw-bold text-main mb-2" style="font-family: 'Space Grotesk', sans-serif;">Candidate Growth Center</h1>
+        <p class="text-muted fs-5">Track your interview progress and monitor improvements across multiple mock interviews.</p>
+    </div>
+
+    <!-- Growth Journey Progress Timeline -->
+    <div class="glass-card p-5 mb-5 text-center" style="background: var(--glass-bg); border: 1px solid var(--glass-border);">
+        <h5 class="fw-bold text-main text-start mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+            <i class="fa-solid fa-route text-purple-400 me-2"></i>Performance Roadmap
+        </h5>
+        
+        <div class="journey-timeline d-none d-lg-block">
+            <div class="journey-line"></div>
+            <div class="d-flex justify-content-between">
+                <div class="journey-node">
+                    <div class="journey-score" style="border-color: var(--accent-purple); box-shadow: var(--glow-purple); color: var(--text-main);">68</div>
+                    <span class="d-block text-main fw-bold small">Interview 1</span>
+                    <small class="text-muted">Aptitude baseline</small>
+                </div>
+                <div class="journey-node">
+                    <div class="journey-score" style="border-color: var(--accent-cyan); box-shadow: var(--glow-cyan); color: var(--text-main);">74</div>
+                    <span class="d-block text-main fw-bold small">Interview 2</span>
+                    <small class="text-muted">Python fundamentals</small>
+                </div>
+                <div class="journey-node">
+                    <div class="journey-score" style="border-color: var(--accent-purple); box-shadow: var(--glow-purple); color: var(--text-main);">81</div>
+                    <span class="d-block text-main fw-bold small">Interview 3</span>
+                    <small class="text-muted">HR Round practice</small>
+                </div>
+                <div class="journey-node">
+                    <div class="journey-score" style="border-color: var(--accent-cyan); box-shadow: var(--glow-cyan); color: var(--text-main);">88</div>
+                    <span class="d-block text-main fw-bold small">Interview 4</span>
+                    <small class="text-success fw-bold font-monospace">Target achieved</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-lg-none text-start d-flex flex-column gap-3 ps-3 border-start border-secondary border-opacity-20">
+            <div class="text-main"><span class="badge bg-purple-900 border border-purple-500 py-1 px-2 font-monospace me-2">68</span> Interview 1 (Aptitude baseline)</div>
+            <div class="text-main"><span class="badge bg-cyan-900 border border-cyan-500 py-1 px-2 font-monospace me-2">74</span> Interview 2 (Python fundamentals)</div>
+            <div class="text-main"><span class="badge bg-purple-900 border border-purple-500 py-1 px-2 font-monospace me-2">81</span> Interview 3 (HR Round practice)</div>
+            <div class="text-main"><span class="badge bg-cyan-900 border border-cyan-500 py-1 px-2 font-monospace me-2">88</span> Interview 4 (Target achieved)</div>
+        </div>
+    </div>
+
+    <!-- Growth Center Metrics Highlights -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100 border-indigo" style="background: var(--glass-bg);">
+                <small class="text-success d-block font-monospace mb-2 text-uppercase">BIGGEST IMPROVEMENT</small>
+                <h3 class="fw-bold text-main mb-2">Confidence +18%</h3>
+                <p class="text-muted small mb-0">Strong eye contact ratios and steady tone pitch during behavioral answers.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100 border-indigo" style="background: var(--glass-bg);">
+                <small class="text-danger d-block font-monospace mb-2 text-uppercase">CURRENT WEAKNESS</small>
+                <h3 class="fw-bold text-main mb-2">Technical explanation</h3>
+                <p class="text-muted small mb-0">Base case definitions and data structure complexity details need expansion.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100 border-indigo d-flex flex-column justify-content-between" style="background: var(--glass-bg);">
+                <div>
+                    <small class="text-cyan-400 d-block font-monospace mb-2 text-uppercase">NEXT RECOMMENDED ACTION</small>
+                    <h5 class="fw-bold text-main mb-3">Practice technical mock interview</h5>
+                </div>
+                <a href="{% url 'ai_interview' %}" class="btn btn-premium-cyan btn-sm w-100 py-3 text-uppercase fw-bold text-decoration-none">
+                    Start Prep
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progression Growth Charts -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="glass-card p-4" style="background: var(--glass-bg);">
+                <h5 class="fw-bold text-main mb-3"><i class="fa-solid fa-chart-line text-purple-400 me-2"></i>Confidence & Comm Growth</h5>
+                <div style="position: relative; height: 260px; width: 100%;">
+                    <canvas id="growthTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-card p-4" style="background: var(--glass-bg);">
+                <h5 class="fw-bold text-main mb-3"><i class="fa-solid fa-chart-bar text-cyan-400 me-2"></i>Technical vs Filler Reduction</h5>
+                <div style="position: relative; height: 260px; width: 100%;">
+                    <canvas id="growthRadarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="glass-card p-4" style="background: var(--glass-bg);">
+        <h5 class="fw-bold text-main mb-4"><i class="fa-solid fa-clock-rotate-left text-purple-400 me-2"></i>Interview History</h5>
+        {% if sessions %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="--bs-table-bg: transparent; color: var(--text-main) !important;">
+                <thead>
+                    <tr class="text-muted small uppercase" style="border-bottom: 2px solid var(--glass-border); color: var(--text-muted) !important;">
+                        <th class="border-0 pb-3 ps-3">Session ID</th>
+                        <th class="border-0 pb-3">Interview Type</th>
+                        <th class="border-0 pb-3">Date</th>
+                        <th class="border-0 pb-3">Score</th>
+                        <th class="border-0 pb-3 pe-3 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                    <tr style="background: rgba(0, 0, 0, 0.02); color: var(--text-main) !important;">
+                        <td class="py-3 border-0 ps-3 text-main" style="color: var(--text-main) !important;">#{{ s.id }}</td>
+                        <td class="border-0 text-main" style="color: var(--text-main) !important;">{{ s.get_interview_type_display }}</td>
+                        <td class="border-0 text-main" style="color: var(--text-main) !important;">{{ s.created_at|date:"M d, Y" }}</td>
+                        <td class="border-0">
+                            <span class="badge py-2 px-3 fw-bold border border-purple-500 border-opacity-30" style="background: rgba(168, 85, 247, 0.15); color: var(--text-main) !important;">
+                                {{ s.final_score }}/100
+                            </span>
+                        </td>
+                        <td class="border-0 pe-3 text-end">
+                            <a href="{% url 'report_detail' s.id %}" class="btn btn-sm btn-premium py-1 px-3 text-decoration-none">View Report</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">No past mock sessions recorded. Complete an interview to view history charts.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Line chart for progression trend
+        const ctxLine = document.getElementById("growthTrendChart").getContext("2d");
+        new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: ["Interview 1", "Interview 2", "Interview 3", "Interview 4"],
+                datasets: [
+                    {
+                        label: 'Confidence Growth',
+                        data: [73, 79, 85, 91],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3
+                    },
+                    {
+                        label: 'Communication Growth',
+                        data: [70, 76, 82, 88],
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { 
+                        display: true,
+                        labels: { color: '#A7AEC7' }
+                    } 
+                },
+                scales: {
+                    x: { 
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#A7AEC7' }
+                    },
+                    y: { 
+                        min: 50, 
+                        max: 100, 
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#A7AEC7' }
+                    }
+                }
+            }
+        });
+
+        // Bar chart for CS parameter skills
+        const ctxBar = document.getElementById("growthRadarChart").getContext("2d");
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: ["Interview 1", "Interview 2", "Interview 3", "Interview 4"],
+                datasets: [
+                    {
+                        label: 'Technical Improvement',
+                        data: [66, 72, 78, 84],
+                        backgroundColor: 'rgba(6, 182, 212, 0.75)',
+                        borderColor: '#06b6d4',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Filler Word Reduction',
+                        data: [55, 68, 80, 93],
+                        backgroundColor: 'rgba(168, 85, 247, 0.75)',
+                        borderColor: '#a855f7',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { 
+                        display: true,
+                        labels: { color: '#A7AEC7' }
+                    } 
+                },
+                scales: {
+                    x: { 
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#A7AEC7' }
+                    },
+                    y: { 
+                        min: 30, 
+                        max: 100, 
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#A7AEC7' }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

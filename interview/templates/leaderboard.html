@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard - AI Interview Performance Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-3 fade-in text-start">
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+            🏆 High Scores
+        </span>
+        <h1 class="fw-bold text-main mb-2" style="font-family: 'Space Grotesk', sans-serif;">Top Placements Leaderboard</h1>
+        <p class="text-muted fs-5">Compare performance statistics with top campus candidates.</p>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="glass-card p-4">
+        <h5 class="fw-bold text-main mb-4"><i class="fa-solid fa-trophy text-warning me-2"></i>Rankings</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="--bs-table-bg: transparent;">
+                <thead>
+                    <tr class="text-muted small uppercase" style="border-bottom: 2px solid var(--glass-border);">
+                        <th class="border-0 pb-3 ps-3">Rank</th>
+                        <th class="border-0 pb-3">Name</th>
+                        <th class="border-0 pb-3">Score</th>
+                        <th class="border-0 pb-3">Interviews Completed</th>
+                        <th class="border-0 pb-3 pe-3 text-end">Badges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidate in candidates %}
+                    <tr style="background: rgba(0, 0, 0, 0.02);">
+                        <td class="py-3 border-0 ps-3">
+                            <span class="badge py-2 px-3 font-monospace fw-bold" 
+                                  style="background: {% if candidate.rank == 1 %}rgba(250, 204, 21, 0.15){% elif candidate.rank == 2 %}rgba(148, 163, 184, 0.15){% else %}rgba(168, 85, 247, 0.15){% endif %};
+                                         border: 1px solid {% if candidate.rank == 1 %}#eab308{% elif candidate.rank == 2 %}#94a3b8{% else %}#a855f7{% endif %};
+                                         color: {% if candidate.rank == 1 %}#facc15{% elif candidate.rank == 2 %}#cbd5e1{% else %}#c084fc{% endif %};">
+                                #{{ candidate.rank }}
+                            </span>
+                        </td>
+                        <td class="border-0 fw-semibold text-main">{{ candidate.name }}</td>
+                        <td class="border-0 font-monospace text-cyan-400 fw-bold">{{ candidate.score }}/100</td>
+                        <td class="border-0 font-monospace text-muted">{{ candidate.interviews }} sessions</td>
+                        <td class="border-0 pe-3 text-end">
+                            <span class="badge bg-purple-950 border border-purple-800 text-purple-300 py-1 px-3 fs-7">
+                                {{ candidate.badges }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

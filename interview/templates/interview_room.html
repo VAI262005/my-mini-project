@@ -1,0 +1,1342 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Interview Room - Question {{ question_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-image: linear-gradient(135deg, rgba(240, 244, 250, 0.92) 0%, rgba(248, 250, 252, 0.96) 100%), url('/static/images/student-interview.jpg') !important;
+        background-attachment: fixed !important;
+        background-position: center !important;
+        background-size: cover !important;
+        background-repeat: no-repeat !important;
+    }
+    .pulsing-record {
+        animation: recordPulse 1.5s infinite alternate;
+    }
+
+    @keyframes recordPulse {
+        0% { box-shadow: 0 0 5px rgba(244, 63, 94, 0.4); transform: scale(1); }
+        100% { box-shadow: 0 0 25px rgba(244, 63, 94, 0.85); transform: scale(1.05); }
+    }
+
+    .shimmer-bg {
+        background: linear-gradient(90deg, rgba(30, 41, 59, 0.4) 25%, rgba(168, 85, 247, 0.15) 50%, rgba(30, 41, 59, 0.4) 75%);
+        background-size: 200% 100%;
+        animation: loadingShimmer 1.5s infinite;
+    }
+
+    @keyframes loadingShimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Soundwave bars styling */
+    .audio-visualizer-bar {
+        width: 6px;
+        background: linear-gradient(to top, var(--accent-purple), var(--accent-cyan));
+        border-radius: 4px;
+        transition: height 0.1s ease;
+        box-shadow: var(--glow-cyan);
+    }
+
+    /* Waveform simulation during speech */
+    .wave-container {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 80px;
+    }
+    
+    .fs-8 {
+        font-size: 0.75rem;
+    }
+
+    /* Floating Interviewer Orb */
+    .interviewer-orb {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #a855f7 0%, #6d28d9 60%, #06b6d4 100%);
+        box-shadow: 0 0 30px rgba(168, 85, 247, 0.35);
+        animation: orbFloat 4s ease-in-out infinite;
+        position: relative;
+    }
+    @keyframes orbFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+    .pulse-border {
+        animation: borderPulse 1.5s infinite alternate;
+    }
+    @keyframes borderPulse {
+        0% { border-color: rgba(244, 63, 94, 0.3); box-shadow: 0 0 10px rgba(244, 63, 94, 0.2); }
+        100% { border-color: rgba(244, 63, 94, 0.95); box-shadow: 0 0 30px rgba(244, 63, 94, 0.6); }
+    }
+    /* Toast notifications styling - Pure White Text */
+    .toast-container .toast {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
+    }
+    .toast-container .toast-body,
+    .toast-container .toast-body p,
+    .toast-container .toast-body small,
+    .toast-container .toast-header span {
+        color: #ffffff !important;
+        opacity: 1 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4 mt-lg-2">
+    <!-- Header panel with progress -->
+    <div class="row fade-in">
+        <div class="col-xl-11 mx-auto">
+            <div class="glass-card p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h5 class="fw-bold mb-0 text-main"><i class="fa-solid fa-circle-nodes text-cyan-400 me-2"></i>{{ session.get_interview_type_display }}</h5>
+                    <small class="text-muted">Active Placements Session #{{ session.id }}</small>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span id="questionNumberBadge" class="badge py-2 px-3 fw-bold border border-secondary border-opacity-20 font-monospace" style="background: var(--bg-secondary); color: var(--text-main) !important;">
+                        Question {{ question_number }} of {{ total_questions }}
+                    </span>
+                    <a href="{% url 'ai_interview' %}" class="btn btn-sm btn-outline-danger py-1 px-3 fs-8"><i class="fa-solid fa-circle-xmark me-2"></i>End Interview</a>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="progress mb-4" style="height: 5px; background: rgba(0, 0, 0, 0.05); border-radius: 3px;">
+                <div class="progress-bar" role="progressbar" 
+                     style="width: {% widthratio question_number total_questions 100 %}%; background: linear-gradient(to right, var(--accent-purple), var(--accent-cyan));" 
+                     aria-valuenow="{{ question_number }}" aria-valuemin="0" aria-valuemax="{{ total_questions }}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Question & Inputs splits -->
+    <div class="row g-4 fade-in" style="animation-delay: 0.1s;">
+        <div class="col-xl-11 mx-auto">
+            <div class="row g-4">
+                
+                <!-- Left Column: Interviewer Panel -->
+                <div class="col-lg-5">
+                    <div class="glass-card p-4 text-center h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <span class="badge py-1 px-3 mb-3 fs-9 font-monospace" style="background: rgba(6,182,212,0.1); color: var(--accent-cyan); border: 1px solid rgba(6,182,212,0.25);">
+                                🤖 AI Evaluator
+                            </span>
+                            
+                            <!-- Bot avatar & Status -->
+                            <div class="mb-4 mt-3 d-flex flex-column align-items-center">
+                                <div class="interviewer-orb d-flex align-items-center justify-content-center mb-3" id="botAvatar">
+                                    <i class="fa-solid fa-robot text-white fs-3" id="botIcon"></i>
+                                </div>
+                                <div class="small fw-semibold text-muted font-monospace" id="statusMessage">Connecting to AI engine...</div>
+                            </div>
+
+                            <!-- The Question Display -->
+                            <div class="p-4 rounded-4 text-start mb-4" style="background: var(--elevated-bg); border: 1px solid var(--glass-border);">
+                                <small class="text-muted d-block uppercase font-monospace mb-2">Prompt Question</small>
+                                <h4 class="fw-bold mb-3 text-main" id="questionText" style="line-height: 1.5;">{{ question }}</h4>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button class="btn btn-premium-outline btn-sm w-100 py-2 mt-2" onclick="speakQuestion()">
+                                <i class="fa-solid fa-volume-high me-2 text-purple-400"></i>Repeat Question
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Candidate Feed & Response -->
+                <div class="col-lg-7">
+                    <div class="glass-card p-4 h-100 text-start d-flex flex-column justify-content-between">
+                        <div>
+                            <!-- Header Indicators -->
+                            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+                                <h5 class="fw-bold text-main mb-0"><i class="fa-solid fa-video text-cyan-400 me-2"></i>Candidate Terminal</h5>
+                                <div class="d-flex gap-2">
+                                    <span id="cameraStatusBadge" class="badge border border-secondary border-opacity-30 text-muted small" style="background: var(--bg-secondary); color: var(--text-muted) !important;"><i class="fa-solid fa-video-slash me-1"></i>Camera Inactive</span>
+                                    <span id="micStatusBadge" class="badge border border-secondary border-opacity-30 text-muted small" style="background: var(--bg-secondary); color: var(--text-muted) !important;"><i class="fa-solid fa-microphone-slash me-1"></i>Mic Inactive</span>
+                                </div>
+                            </div>
+
+                            <!-- DUAL INPUT LAYOUT: Typing Test vs Voice/Video Recording -->
+                            {% if session.interview_type == 'aptitude' or session.interview_type == 'programming' or session.interview_type == 'python' or session.interview_type == 'webdev' or session.interview_type == 'db_sql' or session.interview_type == 'dsa' %}
+                                <!-- TYPING MODE -->
+                                <div class="mb-4">
+                                    {% if session.interview_type != 'aptitude' %}
+                                        <div class="mb-3 d-flex align-items-center gap-3">
+                                            <label for="progLanguageSelect" class="form-label text-main small fw-bold text-uppercase mb-0 font-monospace" style="white-space: nowrap;">
+                                                <i class="fa-solid fa-code text-cyan-400 me-1"></i>Language:
+                                            </label>
+                                            <select class="form-select form-control-custom py-1 px-3 fs-7" id="progLanguageSelect" style="width: auto; min-width: 150px; background-color: var(--elevated-bg);">
+                                                <option value="Python" {% if session.interview_type == 'python' or session.interview_type == 'dsa' or session.interview_type == 'programming' %}selected{% endif %}>Python</option>
+                                                <option value="JavaScript" {% if session.interview_type == 'webdev' %}selected{% endif %}>JavaScript</option>
+                                                <option value="SQL" {% if session.interview_type == 'db_sql' %}selected{% endif %}>SQL</option>
+                                                <option value="Java">Java</option>
+                                                <option value="C++">C++</option>
+                                                <option value="C#">C#</option>
+                                            </select>
+                                        </div>
+                                    {% endif %}
+                                    <label for="typeResponse" class="form-label text-muted small fw-bold text-uppercase font-monospace mb-2">Write response / solution code:</label>
+                                    <textarea class="form-control form-control-custom font-monospace" id="typeResponse" rows="10" placeholder="Type your answer here... (minimum 5 characters to enable submission)" style="font-size: 0.9rem; line-height: 1.6; resize: vertical;"></textarea>
+                                </div>
+
+                                <!-- Controls for Typing -->
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-premium py-2 px-5" id="submitBtn" onclick="submitAnswer()" disabled>
+                                        Submit Response <i class="fa-solid fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            {% else %}
+                                <!-- FULL VIDEO INTERVIEW MODE -->
+                                
+                                <!-- Video Interview Badge -->
+                                <div class="mb-4 d-flex justify-content-center">
+                                    <span class="badge bg-danger bg-opacity-20 text-danger border border-danger border-opacity-30 py-2 px-4 font-monospace shadow-sm fs-7 d-inline-flex align-items-center" style="border-radius: 20px;">
+                                        <i class="fa-solid fa-video me-2 fa-beat"></i>FULL VIDEO INTERVIEW MODE — WEBCAM FEED & AUDIO ACTIVE
+                                    </span>
+                                </div>
+
+                                <!-- Webcam Preview Panel (Always Active) -->
+                                <div class="d-flex justify-content-center mb-4" id="videoPreviewContainer">
+                                    <div class="position-relative bg-black rounded-4 overflow-hidden shadow-lg border border-secondary" style="width: 100%; max-width: 480px; aspect-ratio: 4/3;">
+                                        <video id="webcamPreview" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                        <div class="position-absolute bottom-0 start-0 w-100 p-2 text-start bg-dark bg-opacity-70 text-danger fs-8 font-monospace d-none" id="recordingIndicator">
+                                            <i class="fa-solid fa-circle fa-beat me-1"></i>RECORDING VIDEO FEED
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Waveform visualizer (for audio and active speaking) -->
+                                <div class="d-flex justify-content-center mb-4" id="audioVisualizerContainer">
+                                    <div class="wave-container" id="visualizer">
+                                        <div class="audio-visualizer-bar" style="height: 15px;"></div>
+                                        <div class="audio-visualizer-bar" style="height: 30px;"></div>
+                                        <div class="audio-visualizer-bar" style="height: 50px;"></div>
+                                        <div class="audio-visualizer-bar" style="height: 25px;"></div>
+                                        <div class="audio-visualizer-bar" style="height: 60px;"></div>
+                                        <div class="audio-visualizer-bar" style="height: 35px;"></div>
+                                        <div class="audio-visualizer-bar" style="height: 15px;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Live transcript output (Web Speech API) -->
+                                <div class="mb-4 p-3 rounded-3 text-start" style="background: rgba(255, 255, 255, 0.8); border: 1px solid var(--glass-border); min-height: 100px;">
+                                    <small class="text-muted d-block border-bottom border-secondary border-opacity-10 pb-1 mb-2 font-monospace">Real-time Speech Transcript</small>
+                                    <p class="mb-0 font-monospace fs-7" id="liveTranscript" style="line-height: 1.6; min-height: 40px; color: var(--text-main) !important;">
+                                        [Click the Record button below and begin speaking your response...]
+                                    </p>
+                                </div>
+
+                                <!-- Controls Deck -->
+                                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-4">
+                                    <!-- Microphone Status Badge -->
+                                    <div class="badge bg-dark border border-secondary border-opacity-30 p-2 px-3 text-start d-flex align-items-center gap-2" id="micStatusBadge" style="border-radius: 12px;">
+                                        <span class="rounded-circle bg-success d-inline-block" id="micStatusDot" style="width: 8px; height: 8px;"></span>
+                                        <span class="small font-monospace text-white" id="micStatusText">MICROPHONE ● Good</span>
+                                    </div>
+
+                                    <!-- Record button -->
+                                    <button class="btn p-0 rounded-circle border-0 overflow-hidden" style="width: 76px; height: 76px;" id="recordBtn" onclick="toggleRecording()">
+                                        <div class="w-100 h-100 d-flex align-items-center justify-content-center" id="recordBtnBg" style="background: var(--accent-purple); transition: all 0.3s ease;">
+                                            <i class="fa-solid fa-microphone text-white fs-3" id="recordBtnIcon"></i>
+                                        </div>
+                                    </button>
+
+                                    <!-- Submit button -->
+                                    <button class="btn btn-premium py-3 px-4 d-flex align-items-center" id="submitBtn" onclick="submitAnswer()" disabled>
+                                        Submit Response <i class="fa-solid fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+
+                                <!-- File Uploader Panel -->
+                                <div class="border-top border-secondary border-opacity-10 pt-3 mt-3 text-center" style="border-top-style: dashed !important;">
+                                    <span class="text-muted small">Or upload pre-recorded files:</span>
+                                    <input type="file" id="mediaFileInput" accept="audio/*,video/*" class="d-none" onchange="handleMediaFileSelect(event)">
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="document.getElementById('mediaFileInput').click()">
+                                        <i class="fa-solid fa-file-arrow-up me-2"></i>Upload File
+                                    </button>
+                                    <div id="fileUploadStatus" class="small text-cyan-400 mt-2 d-none font-monospace"></div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <!-- NON-BLOCKING TOAST NOTIFICATIONS CONTAINER (Top-Right) -->
+                        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080; pointer-events: none;">
+                            
+                            <!-- 1. No Answer Received Notification Toast -->
+                            <div id="noAnswerToast" class="toast bg-dark text-white border border-warning shadow-lg rounded-4 overflow-hidden mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="pointer-events: auto; min-width: 320px;">
+                                <div class="toast-header bg-warning bg-opacity-20 text-warning border-bottom border-warning border-opacity-25 font-monospace fw-bold py-2 px-3 d-flex align-items-center">
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i><span>⚠ No Answer Received</span>
+                                    <button type="button" class="btn-close btn-close-white ms-auto" onclick="closeToast('noAnswerToast')" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body p-3">
+                                    <p class="small text-white mb-3 font-monospace" style="color: #ffffff !important;">We didn't receive an answer to this question.</p>
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-outline-light font-monospace py-1 px-3" onclick="answerAgainPrompt('noAnswerToast')">
+                                            <i class="fa-solid fa-rotate-left me-1"></i>Answer Again
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-warning font-monospace py-1 px-3 fw-bold text-dark" onclick="skipQuestionAction('noAnswerToast')">
+                                            <i class="fa-solid fa-forward me-1"></i>Skip
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Answer Too Short Notification Toast -->
+                            <div id="shortAnswerToast" class="toast bg-dark text-white border border-warning shadow-lg rounded-4 overflow-hidden mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="pointer-events: auto; min-width: 320px;">
+                                <div class="toast-header bg-warning bg-opacity-20 text-warning border-bottom border-warning border-opacity-25 font-monospace fw-bold py-2 px-3 d-flex align-items-center">
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i><span>⚠ Answer Too Short</span>
+                                    <button type="button" class="btn-close btn-close-white ms-auto" onclick="closeToast('shortAnswerToast')" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body p-3">
+                                    <p class="small text-white mb-3 font-monospace" style="color: #ffffff !important;">Your answer is very brief. Please provide more details.</p>
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-outline-light font-monospace py-1 px-3" onclick="answerAgainPrompt('shortAnswerToast')">
+                                            <i class="fa-solid fa-rotate-left me-1"></i>Answer Again
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-warning font-monospace py-1 px-3 fw-bold text-dark" onclick="forceSubmitAnswer('shortAnswerToast')">
+                                            <i class="fa-solid fa-check me-1"></i>Submit Anyway
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Too Much Background Noise Notification Toast -->
+                            <div id="noiseToast" class="toast bg-dark text-white border border-warning shadow-lg rounded-4 overflow-hidden mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="pointer-events: auto; min-width: 320px;">
+                                <div class="toast-header bg-warning bg-opacity-20 text-warning border-bottom border-warning border-opacity-25 font-monospace fw-bold py-2 px-3 d-flex align-items-center">
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i><span>⚠ Too Much Background Noise</span>
+                                    <button type="button" class="btn-close btn-close-white ms-auto" onclick="closeToast('noiseToast')" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body p-3">
+                                    <p class="small text-white mb-3 font-monospace" style="color: #ffffff !important;">Your audio contains excessive background noise. Please check your microphone or move to a quieter place.</p>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-outline-warning font-monospace py-1 px-3" onclick="closeToast('noiseToast')">
+                                            <i class="fa-solid fa-check me-1"></i>OK
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Audio Unclear Notification Toast -->
+                            <div id="unclearAudioToast" class="toast bg-dark text-white border border-info shadow-lg rounded-4 overflow-hidden mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="pointer-events: auto; min-width: 320px;">
+                                <div class="toast-header bg-info bg-opacity-20 text-info border-bottom border-info border-opacity-25 font-monospace fw-bold py-2 px-3 d-flex align-items-center">
+                                    <i class="fa-solid fa-volume-xmark me-2"></i><span>⚠ Audio Unclear</span>
+                                    <button type="button" class="btn-close btn-close-white ms-auto" onclick="closeToast('unclearAudioToast')" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body p-3">
+                                    <p class="small text-white mb-3 font-monospace" style="color: #ffffff !important;">We couldn't clearly understand your audio. Please speak closer to the microphone.</p>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-info font-monospace py-1 px-3 fw-bold text-dark" onclick="answerAgainPrompt('unclearAudioToast')">
+                                            <i class="fa-solid fa-rotate-left me-1"></i>Try Again
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Answer Not Relevant Notification Toast -->
+                            <div id="notRelevantToast" class="toast bg-dark text-white border border-danger shadow-lg rounded-4 overflow-hidden mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="pointer-events: auto; min-width: 320px;">
+                                <div class="toast-header bg-danger bg-opacity-20 text-danger border-bottom border-danger border-opacity-25 font-monospace fw-bold py-2 px-3 d-flex align-items-center">
+                                    <i class="fa-solid fa-circle-exclamation me-2"></i><span>⚠ Answer Not Relevant</span>
+                                    <button type="button" class="btn-close btn-close-white ms-auto" onclick="closeToast('notRelevantToast')" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body p-3">
+                                    <p class="small text-white mb-3 font-monospace" style="color: #ffffff !important;">Your answer does not seem related to the question. Please focus on the question and try again.</p>
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-outline-light font-monospace py-1 px-3" onclick="answerAgainPrompt('notRelevantToast')">
+                                            <i class="fa-solid fa-rotate-left me-1"></i>Answer Again
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger font-monospace py-1 px-3 fw-bold text-white" onclick="forceSubmitAnswer('notRelevantToast', 'not_relevant')">
+                                            <i class="fa-solid fa-check me-1"></i>Submit Anyway
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 6. Answer Needs More Detail Notification Toast -->
+                            <div id="partialRelevantToast" class="toast bg-dark text-white border border-warning shadow-lg rounded-4 overflow-hidden mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="pointer-events: auto; min-width: 320px;">
+                                <div class="toast-header bg-warning bg-opacity-20 text-warning border-bottom border-warning border-opacity-25 font-monospace fw-bold py-2 px-3 d-flex align-items-center">
+                                    <i class="fa-solid fa-lightbulb me-2"></i><span>💡 Answer Needs More Detail</span>
+                                    <button type="button" class="btn-close btn-close-white ms-auto" onclick="closeToast('partialRelevantToast')" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body p-3">
+                                    <p class="small text-white mb-3 font-monospace" style="color: #ffffff !important;">Your answer is related to the question, but please explain the specific challenge and how you solved it.</p>
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button type="button" class="btn btn-sm btn-outline-light font-monospace py-1 px-3" onclick="answerAgainPrompt('partialRelevantToast')">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i>Improve Answer
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-warning font-monospace py-1 px-3 fw-bold text-dark" onclick="forceSubmitAnswer('partialRelevantToast', 'partially_relevant')">
+                                            <i class="fa-solid fa-check me-1"></i>Submit Anyway
+                                        </button>
+                                    </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats counters below candidate stream -->
+                        <div class="mt-4 pt-3 border-top border-secondary border-opacity-10 d-flex justify-content-start align-items-center gap-4">
+                            <div class="text-muted small">
+                                <i class="fa-regular fa-clock me-1 text-cyan-400"></i>Duration: <span class="fw-bold text-main fs-6 font-monospace" id="speakingTimer">0.0</span>s
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fa-solid fa-pen-nib me-1 text-purple-400"></i>Words count: <span class="fw-bold text-main fs-6 font-monospace" id="wordsCounter">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Loading Overlay -->
+<div class="position-fixed top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center flex-column z-3" 
+     id="loaderOverlay" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+    <div class="glass-card p-5 text-center shimmer-bg border-indigo" style="max-width: 450px;">
+        <i class="fa-solid fa-circle-notch text-purple-400 fs-1 fa-spin mb-4" style="color: var(--accent-purple);"></i>
+        <h4 class="fw-bold text-white mb-2" id="loaderTitle">Analyzing Performance</h4>
+        <p class="text-muted small mb-0" id="loaderSub">Evaluating confidence parameters, grammar issues, sentiment alignments, eye contact scores, and posture elements...</p>
+    </div>
+</div>
+
+<!-- Interruption Alert Overlay -->
+<div class="position-fixed top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center flex-column z-3" 
+     id="interruptionOverlay" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);">
+    <div class="glass-card p-5 text-center pulse-border" style="max-width: 500px; background: radial-gradient(circle at 10% 10%, rgba(244, 63, 94, 0.15) 0%, var(--card-bg) 100%); border: 2px solid rgba(244, 63, 94, 0.5); border-radius: 24px;">
+        <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-4 fa-beat"></i>
+        <h4 class="fw-bold text-white mb-2" id="interruptionHeader">⚠️ SYSTEM INTERRUPTION</h4>
+        <p class="text-white fs-5 mb-4 font-monospace" id="interruptionText" style="line-height: 1.5; color: var(--text-main) !important;"></p>
+        <div class="mb-4">
+            <span class="badge bg-danger text-white py-2 px-3 font-monospace" id="pressureTimerBadge">PRESSURE LEVEL: MEDIUM</span>
+        </div>
+        <button class="btn btn-danger py-2 px-4 fw-bold text-uppercase" onclick="acknowledgeInterruption()">Acknowledge & Resume</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Configuration & Session variables
+    const sessionId = "{{ session.id }}";
+    const isTypingTest = ["aptitude", "programming", "python", "webdev", "db_sql", "dsa"].includes("{{ session.interview_type }}");
+    const pressureLevel = "{{ session.pressure_level }}";
+    
+    let activeMediaMode = 'video'; // Full Video Interview mode (audio-only removed)
+    let isRecording = false;
+    let recordingStartTime = 0;
+    let timerInterval = null;
+    let accumulatedTime = 0.0;
+
+    // Interrupter variables
+    let isInterrupted = false;
+    let interruptionPromptText = "{{ interruption_prompt|escapejs }}";
+    if (!interruptionPromptText || interruptionPromptText === "") {
+        interruptionPromptText = "Could you explain that in simpler terms?";
+    }
+    let interruptionTime = 0.0;
+    let reactionTime = 0.0;
+    let recoveryTime = 0.0;
+    let interruptionTimer = null;
+    let wordCountBeforeInterruption = 0;
+
+    function triggerInterruption() {
+        if (!isRecording) return;
+        
+        window.speechSynthesis.cancel();
+        isInterrupted = true;
+        interruptionTime = accumulatedTime;
+        
+        if (!interruptionPromptText) {
+            interruptionPromptText = "Could you explain that in simpler terms?";
+        }
+        
+        const currentText = liveTranscript ? liveTranscript.innerText : "";
+        wordCountBeforeInterruption = currentText.trim() === "" ? 0 : currentText.trim().split(/\s+/).length;
+        
+        document.getElementById("interruptionText").innerText = `"${interruptionPromptText}"`;
+        document.getElementById("pressureTimerBadge").innerText = `PRESSURE LEVEL: ${pressureLevel.toUpperCase()}`;
+        
+        const overlay = document.getElementById("interruptionOverlay");
+        overlay.classList.remove("d-none");
+        overlay.classList.add("d-flex");
+        
+        const utterance = new SpeechSynthesisUtterance(interruptionPromptText);
+        window.speechSynthesis.speak(utterance);
+    }
+
+    let challengeTimer = null;
+    let challengeTimeRemaining = 15;
+    
+    function acknowledgeInterruption() {
+        // Calculate reaction time to the interruption
+        reactionTime = accumulatedTime - interruptionTime;
+        console.log("Interruption Acknowledged. Reaction Time:", reactionTime);
+        
+        // Speak challenge using SpeechSynthesis
+        window.speechSynthesis.cancel();
+        const challengePrompt = "Pressure Challenge: Summarize your previous answer in one sentence. You have 15 seconds. Start speaking now.";
+        const challengeUtterance = new SpeechSynthesisUtterance(challengePrompt);
+        window.speechSynthesis.speak(challengeUtterance);
+        
+        // Update overlay content for the challenge
+        document.getElementById("interruptionHeader").innerHTML = "⚡ PRESSURE RECOVERY CHALLENGE";
+        document.getElementById("interruptionText").innerText = "Summarize your previous answer in a single, concise sentence. Speak clearly!";
+        
+        // Replace badge and buttons
+        const badgeContainer = document.getElementById("pressureTimerBadge").parentNode;
+        badgeContainer.innerHTML = `<span class="badge bg-warning text-dark py-2 px-3 font-monospace" id="challengeCountdownBadge">15s REMAINING</span>`;
+        
+        const overlayDiv = document.querySelector("#interruptionOverlay .glass-card");
+        let completeBtn = document.getElementById("challengeCompleteBtn");
+        if (!completeBtn) {
+            // Find existing button
+            const oldBtn = overlayDiv.querySelector("button");
+            if (oldBtn) {
+                oldBtn.outerHTML = `<button class="btn btn-warning text-dark py-2 px-4 fw-bold text-uppercase" id="challengeCompleteBtn" onclick="completeRecoveryChallenge()">Done, Resume Interview</button>`;
+            }
+        }
+        
+        // Reset challenge variables
+        challengeTimeRemaining = 15;
+        
+        // Start countdown
+        challengeTimer = setInterval(() => {
+            challengeTimeRemaining--;
+            const cBadge = document.getElementById("challengeCountdownBadge");
+            if (cBadge) {
+                cBadge.innerText = `${challengeTimeRemaining}s REMAINING`;
+            }
+            if (challengeTimeRemaining <= 0) {
+                completeRecoveryChallenge();
+            }
+        }, 1000);
+    }
+    
+    function completeRecoveryChallenge() {
+        if (challengeTimer) {
+            clearInterval(challengeTimer);
+            challengeTimer = null;
+        }
+        
+        // Speech synthesis stop
+        window.speechSynthesis.cancel();
+        
+        // Hide overlay
+        const overlay = document.getElementById("interruptionOverlay");
+        overlay.classList.remove("d-flex");
+        overlay.classList.add("d-none");
+        
+        // Mark total recovery time
+        recoveryTime = accumulatedTime - interruptionTime - reactionTime;
+        console.log("Pressure Recovery Challenge Completed. Recovery Time:", recoveryTime);
+        
+        // Reset HTML overlay structure for next interruption
+        const overlayDiv = document.querySelector("#interruptionOverlay .glass-card");
+        if (overlayDiv) {
+            overlayDiv.innerHTML = `
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-4 fa-beat"></i>
+                <h4 class="fw-bold text-white mb-2" id="interruptionHeader">⚠️ SYSTEM INTERRUPTION</h4>
+                <p class="text-white fs-5 mb-4 font-monospace" id="interruptionText" style="line-height: 1.5; color: var(--text-main) !important;"></p>
+                <div class="mb-4">
+                    <span class="badge bg-danger text-white py-2 px-3 font-monospace" id="pressureTimerBadge">PRESSURE LEVEL: MEDIUM</span>
+                </div>
+                <button class="btn btn-danger py-2 px-4 fw-bold text-uppercase" onclick="acknowledgeInterruption()">Acknowledge & Resume</button>
+            `;
+        }
+    }
+    
+    // Live Webcam Stream
+    let webcamStream = null;
+    
+    // Web Speech Recognition
+    let recognition = null;
+    let transcriptText = "";
+    
+    // Audio/Video recorded elements
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let audioBlob = null;
+    let videoBlob = null;
+    let uploadedFile = null;
+    let useWebSpeech = true;
+
+    // Audio Noise & Silence Detection Engine
+    let audioCtx = null;
+    let analyserNode = null;
+    let silenceTimer = null;
+    let noiseEventsCount = 0;
+    let currentAudioQuality = 'good';
+    let isNoAnswerPromptActive = false;
+    
+    // DOM Elements
+    const recordBtn = document.getElementById("recordBtn");
+    const recordBtnBg = document.getElementById("recordBtnBg");
+    const recordBtnIcon = document.getElementById("recordBtnIcon");
+    const statusMessage = document.getElementById("statusMessage");
+    const speakingTimer = document.getElementById("speakingTimer");
+    const wordsCounter = document.getElementById("wordsCounter");
+    const liveTranscript = document.getElementById("liveTranscript");
+    const submitBtn = document.getElementById("submitBtn");
+    const loaderOverlay = document.getElementById("loaderOverlay");
+    const speechModeToggle = document.getElementById("speechModeToggle");
+    const visualizerBars = document.querySelectorAll(".audio-visualizer-bar");
+    const botAvatar = document.getElementById("botAvatar");
+    const botIcon = document.getElementById("botIcon");
+    const webcamPreview = document.getElementById("webcamPreview");
+    
+    // Mode specific elements
+    const audioModeTab = document.getElementById("audioModeTab");
+    const videoModeTab = document.getElementById("videoModeTab");
+    const videoPreviewContainer = document.getElementById("videoPreviewContainer");
+    const audioVisualizerContainer = document.getElementById("audioVisualizerContainer");
+    const recordingIndicator = document.getElementById("recordingIndicator");
+    const speechModeToggleContainer = document.getElementById("speechModeToggleContainer");
+    
+    // Custom camera/mic badges in template
+    const cameraStatusBadge = document.getElementById("cameraStatusBadge");
+    const micStatusBadge = document.getElementById("micStatusBadge");
+
+    function initAudioAnalyser(stream) {
+        if (!stream) return;
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            const source = audioCtx.createMediaStreamSource(stream);
+            analyserNode = audioCtx.createAnalyser();
+            analyserNode.fftSize = 512;
+            source.connect(analyserNode);
+
+            const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+            
+            function checkAudioEnergy() {
+                if (!analyserNode) return;
+                analyserNode.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                }
+                const averageRMS = sum / dataArray.length;
+                
+                const micDot = document.getElementById("micStatusDot");
+                const micText = document.getElementById("micStatusText");
+                
+                if (averageRMS > 75) {
+                    noiseEventsCount++;
+                    currentAudioQuality = 'high_noise';
+                    if (micDot) micDot.className = "rounded-circle bg-warning d-inline-block";
+                    if (micText) micText.innerText = "MICROPHONE ⚠ High Noise";
+                    
+                    if (noiseEventsCount === 20 && !isRecording) {
+                        showNoiseToast();
+                    }
+                } else {
+                    if (micDot && !isRecording) micDot.className = "rounded-circle bg-success d-inline-block";
+                    if (micText && !isRecording) micText.innerText = "MICROPHONE ● Good";
+                }
+                
+                requestAnimationFrame(checkAudioEnergy);
+            }
+            
+            checkAudioEnergy();
+        } catch (e) {
+            console.warn("Web Audio API Analyser not supported:", e);
+        }
+    }
+
+    function showNotificationToast(toastId) {
+        const toastEl = document.getElementById(toastId);
+        if (toastEl && typeof bootstrap !== 'undefined') {
+            const toast = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl, { autohide: false });
+            toast.show();
+        }
+    }
+
+    function closeToast(toastId) {
+        const toastEl = document.getElementById(toastId);
+        if (toastEl && typeof bootstrap !== 'undefined') {
+            const toast = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl, { autohide: false });
+            toast.hide();
+        }
+    }
+
+    function showNoiseToast() {
+        showNotificationToast("noiseToast");
+    }
+
+    function startSilenceTimeout() {
+        clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+            if (!isRecording && !isNoAnswerPromptActive) {
+                isNoAnswerPromptActive = true;
+                showNotificationToast("noAnswerToast");
+            }
+        }, 30000);
+    }
+
+    function answerAgainPrompt(toastId = null) {
+        if (toastId) closeToast(toastId);
+        isNoAnswerPromptActive = false;
+        clearTimeout(silenceTimer);
+        
+        if (isRecording) {
+            stopRecording();
+        }
+        
+        transcriptText = "";
+        if (liveTranscript) {
+            liveTranscript.innerText = "[Click the Record button below and begin speaking your response...]";
+        }
+        if (wordsCounter) wordsCounter.innerText = "0";
+        if (speakingTimer) speakingTimer.innerText = "0.0";
+        accumulatedTime = 0.0;
+        audioBlob = null;
+        videoBlob = null;
+        recordedChunks = [];
+        
+        if (submitBtn) submitBtn.disabled = true;
+        if (statusMessage) {
+            statusMessage.innerText = isTypingTest ? "Solve the question by typing below" : (activeMediaMode === 'video' ? "Webcam aligned. Ready." : "Ready to record");
+        }
+        
+        if (!isTypingTest) {
+            startSilenceTimeout();
+        }
+    }
+
+    function skipQuestionAction(toastId = null) {
+        if (toastId) closeToast(toastId);
+        isNoAnswerPromptActive = false;
+        const liveTranscript = document.getElementById("liveTranscript");
+        if (liveTranscript) liveTranscript.innerText = "[Question Skipped by Candidate]";
+        submitAnswer('skipped', true);
+    }
+
+    function forceSubmitAnswer(toastId = null, forcedStatus = 'short_answer') {
+        if (toastId) closeToast(toastId);
+        submitAnswer(forcedStatus, true);
+    }
+
+    // Initialize Page
+    document.addEventListener("DOMContentLoaded", function() {
+        if (isTypingTest) {
+            initTypingTest();
+        } else {
+            initSpeechRecognition();
+            startWebcamPreview(); // Auto-start webcam feed and video recorder
+            
+            // Settings Listeners
+            if (speechModeToggle) {
+                speechModeToggle.addEventListener("change", function() {
+                    useWebSpeech = this.checked;
+                    console.log("Speech Mode Toggled. Use Web Speech:", useWebSpeech);
+                });
+            }
+        }
+        
+        // Auto-read question on load
+        setTimeout(speakQuestion, 1000);
+    });
+
+    // Media mode toggling logic
+    function switchMediaMode(mode) {
+        if (isRecording) {
+            alert("Please stop the active recording before switching modes.");
+            return;
+        }
+        
+        activeMediaMode = mode;
+        uploadedFile = null;
+        const uploadStatus = document.getElementById("fileUploadStatus");
+        if (uploadStatus) uploadStatus.classList.add("d-none");
+        
+        if (mode === 'audio') {
+            audioModeTab.classList.add("active", "text-white");
+            audioModeTab.classList.remove("text-muted");
+            videoModeTab.classList.remove("active", "text-white");
+            videoModeTab.classList.add("text-muted");
+            
+            videoPreviewContainer.classList.add("d-none");
+            videoPreviewContainer.classList.remove("d-flex");
+            audioVisualizerContainer.classList.remove("d-none");
+            speechModeToggleContainer.classList.remove("d-none");
+            
+            statusMessage.innerText = "Switched to Audio Mode";
+            stopWebcamPreview();
+            initMediaRecorder('audio');
+        } else if (mode === 'video') {
+            videoModeTab.classList.add("active", "text-white");
+            videoModeTab.classList.remove("text-muted");
+            audioModeTab.classList.remove("active", "text-white");
+            audioModeTab.classList.add("text-muted");
+            
+            audioVisualizerContainer.classList.add("d-none");
+            videoPreviewContainer.classList.remove("d-none");
+            videoPreviewContainer.classList.add("d-flex");
+            speechModeToggleContainer.classList.remove("d-none");
+            
+            statusMessage.innerText = "Starting webcam preview...";
+            startWebcamPreview();
+        }
+    }
+
+    // Start Live camera preview feed
+    function startWebcamPreview() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 320, height: 240 } })
+                .then(stream => {
+                    webcamStream = stream;
+                    webcamPreview.srcObject = stream;
+                    statusMessage.innerText = "Webcam aligned. Ready to record.";
+                    initMediaRecorder('video', stream);
+                    if (cameraStatusBadge) {
+                        cameraStatusBadge.className = "badge bg-dark border border-success text-success small";
+                        cameraStatusBadge.innerHTML = '<i class="fa-solid fa-video me-1"></i>Camera Active';
+                    }
+                })
+                .catch(err => {
+                    console.error("Camera access failed:", err);
+                    statusMessage.innerText = "Webcam access denied";
+                    alert("Unable to access camera. Please enable webcam permissions.");
+                });
+        }
+    }
+
+    // Stop webcam feed stream
+    function stopWebcamPreview() {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream = null;
+        }
+        if (webcamPreview) {
+            webcamPreview.srcObject = null;
+        }
+        if (cameraStatusBadge) {
+            cameraStatusBadge.className = "badge bg-dark border border-secondary border-opacity-30 text-muted small";
+            cameraStatusBadge.innerHTML = '<i class="fa-solid fa-video-slash me-1"></i>Camera Inactive';
+        }
+    }
+
+    // Setup typing test logic
+    function initTypingTest() {
+        statusMessage.innerText = "Solve the question by typing below";
+        
+        const typeResponse = document.getElementById("typeResponse");
+        if (typeResponse) {
+            typeResponse.focus();
+            
+            // Start timer immediately on page load
+            startTypingTimer();
+            
+            typeResponse.addEventListener("input", function() {
+                const text = this.value;
+                // Count words
+                const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+                wordsCounter.innerText = words.length;
+                // Enable submit button
+                submitBtn.disabled = text.trim().length < 5;
+            });
+        }
+    }
+
+    function startTypingTimer() {
+        recordingStartTime = Date.now();
+        timerInterval = setInterval(() => {
+            accumulatedTime = (Date.now() - recordingStartTime) / 1000;
+            speakingTimer.innerText = accumulatedTime.toFixed(1);
+        }, 100);
+    }
+
+    // Text-to-Speech: Read Question
+    function speakQuestion() {
+        const question = document.getElementById("questionText").innerText;
+        
+        // Cancel any current speak
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(question);
+        
+        // Select a good natural English voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const englishVoice = voices.find(voice => voice.lang.includes('en-US') || voice.lang.includes('en-GB'));
+        if (englishVoice) {
+            utterance.voice = englishVoice;
+        }
+        
+        utterance.rate = 0.95; // Slightly slower for clarity
+        
+        utterance.onstart = function() {
+            statusMessage.innerText = "Bot speaking...";
+            botAvatar.style.borderColor = "var(--accent-primary)";
+            botIcon.className = "fa-solid fa-volume-high text-indigo-400 fs-2 fa-bounce";
+        };
+        
+        utterance.onend = function() {
+            statusMessage.innerText = isTypingTest ? "Solve the question by typing below" : (activeMediaMode === 'video' ? "Webcam aligned. Ready." : "Ready to record");
+            botAvatar.style.borderColor = "var(--glass-border)";
+            botIcon.className = "fa-solid fa-robot text-indigo-400 fs-2";
+            if (!isTypingTest) {
+                startSilenceTimeout();
+            }
+        };
+        
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Initialize Web Speech Recognition
+    function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.warn("Web Speech API is not supported in this browser. Falling back to backend media file extraction.");
+            if (speechModeToggle) {
+                speechModeToggle.checked = false;
+                speechModeToggle.disabled = true;
+            }
+            useWebSpeech = false;
+            return;
+        }
+        
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = function(event) {
+            let interimTranscript = "";
+            let finalTranscript = "";
+            
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    transcriptText += event.results[i][0].transcript + " ";
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            const currentText = transcriptText + interimTranscript;
+            if (liveTranscript) {
+                liveTranscript.innerText = currentText || "[Speaking...]";
+            }
+            
+            // Calculate word count
+            const words = currentText.trim().split(/\s+/);
+            wordsCounter.innerText = currentText.trim() === "" ? 0 : words.length;
+        };
+        
+        recognition.onerror = function(event) {
+            console.error("Speech Recognition Error:", event.error);
+        };
+    }
+
+    // Initialize Media Recorder (audio or video camera stream)
+    function initMediaRecorder(type, stream = null) {
+        recordedChunks = [];
+        audioBlob = null;
+        videoBlob = null;
+        
+        if (stream) {
+            initAudioAnalyser(stream);
+            // Video Mode
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            mediaRecorder.ondataavailable = function(e) {
+                if (e.data.size > 0) {
+                    recordedChunks.push(e.data);
+                }
+            };
+            mediaRecorder.onstop = function() {
+                videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                console.log("Video recording captured. Blob size:", videoBlob.size);
+            };
+        } else {
+            // Audio Mode
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(audioStream => {
+                        initAudioAnalyser(audioStream);
+                        mediaRecorder = new MediaRecorder(audioStream);
+                        mediaRecorder.ondataavailable = function(e) {
+                            if (e.data.size > 0) {
+                                recordedChunks.push(e.data);
+                            }
+                        };
+                        mediaRecorder.onstop = function() {
+                            audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                            console.log("Audio recording captured. Blob size:", audioBlob.size);
+                        };
+                        
+                        if (micStatusBadge) {
+                            micStatusBadge.className = "badge bg-dark border border-success text-success small";
+                            micStatusBadge.innerHTML = '<i class="fa-solid fa-microphone me-1"></i>Mic Active';
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Microphone access failed:", err);
+                        if (micStatusBadge) {
+                            micStatusBadge.className = "badge bg-dark border border-secondary border-opacity-30 text-muted small";
+                            micStatusBadge.innerHTML = '<i class="fa-solid fa-microphone-slash me-1"></i>Mic Disabled';
+                        }
+                    });
+            }
+        }
+    }
+
+    // Handle Pre-recorded File Select
+    function handleMediaFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        activeMediaMode = 'file';
+        uploadedFile = file;
+        
+        const uploadStatus = document.getElementById("fileUploadStatus");
+        uploadStatus.innerText = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+        uploadStatus.classList.remove("d-none");
+        
+        statusMessage.innerText = "Media file uploaded successfully";
+        submitBtn.disabled = false;
+        
+        // Auto fill word count or duration if possible, or leave it to backend evaluation
+        wordsCounter.innerText = "File uploaded";
+        speakingTimer.innerText = "N/A";
+        
+        // Disable recorder button
+        if (recordBtnBg) recordBtnBg.style.opacity = "0.5";
+        
+        // Mocking transcript prompt
+        if (liveTranscript) {
+            liveTranscript.innerText = "[Media file loaded. Solution transcript will be analyzed by the AI engine upon submission.]";
+        }
+    }
+
+    // Toggle Recording State
+    function toggleRecording() {
+        window.speechSynthesis.cancel(); // Stop bot speaking
+        
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    }
+
+    // Start Recording
+    function startRecording() {
+        isRecording = true;
+        transcriptText = "";
+        if (liveTranscript) {
+            liveTranscript.innerText = "";
+        }
+        wordsCounter.innerText = "0";
+        speakingTimer.innerText = "0.0";
+        accumulatedTime = 0.0;
+        submitBtn.disabled = true;
+        
+        // UI Updates
+        if (recordBtnBg) recordBtnBg.style.background = "var(--accent-danger)";
+        if (recordBtnIcon) recordBtnIcon.className = "fa-solid fa-square text-white fs-3 pulsing-record";
+        statusMessage.innerText = "Recording...";
+        
+        if (activeMediaMode === 'video') {
+            recordingIndicator.classList.remove("d-none");
+        }
+        
+        if (micStatusBadge) {
+            micStatusBadge.className = "badge bg-dark border border-danger text-danger small pulsing-record";
+            micStatusBadge.innerHTML = '<i class="fa-solid fa-microphone me-1"></i>Mic Recording';
+        }
+        
+        // Start Timer
+        recordingStartTime = Date.now();
+        timerInterval = setInterval(() => {
+            accumulatedTime = (Date.now() - recordingStartTime) / 1000;
+            speakingTimer.innerText = accumulatedTime.toFixed(1);
+            
+            if (activeMediaMode === 'audio') {
+                // Visualizer bounce effect simulation
+                visualizerBars.forEach(bar => {
+                    const height = Math.floor(Math.random() * 45) + 10;
+                    bar.style.height = `${height}px`;
+                });
+            }
+        }, 100);
+        
+        // Start Engines
+        if (useWebSpeech && recognition) {
+            recognition.start();
+        }
+        
+        if (mediaRecorder && mediaRecorder.state === 'inactive') {
+            mediaRecorder.start();
+        }
+
+        // Schedule Interruption
+        if (pressureLevel !== 'none' && !isInterrupted) {
+            let delayMs = 12000;
+            if (pressureLevel === 'low') delayMs = 15000;
+            if (pressureLevel === 'high') delayMs = 8000;
+            
+            interruptionTimer = setTimeout(triggerInterruption, delayMs);
+        }
+    }
+
+    // Stop Recording
+    function stopRecording() {
+        isRecording = false;
+        
+        // Stop timer
+        clearInterval(timerInterval);
+        
+        // Reset Visualizer
+        visualizerBars.forEach(bar => {
+            bar.style.height = '10px';
+        });
+        
+        // UI Updates
+        if (recordBtnBg) recordBtnBg.style.background = "var(--accent-primary)";
+        if (recordBtnIcon) recordBtnIcon.className = "fa-solid fa-microphone text-white fs-3";
+        statusMessage.innerText = "Recording saved";
+        submitBtn.disabled = false;
+        
+        if (activeMediaMode === 'video') {
+            recordingIndicator.classList.add("d-none");
+        }
+        
+        if (micStatusBadge) {
+            micStatusBadge.className = "badge bg-dark border border-success text-success small";
+            micStatusBadge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Mic Response Saved';
+        }
+        
+        // Stop Engines
+        if (recognition) {
+            try {
+                recognition.stop();
+            } catch(e) {}
+        }
+        
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+
+        if (interruptionTimer) {
+            clearTimeout(interruptionTimer);
+        }
+    }
+
+    // AJAX Submission of response
+    function submitAnswer(forcedStatus = null, skipShortCheck = false) {
+        clearTimeout(silenceTimer);
+        const questionText = document.getElementById("questionText").innerText;
+        let finalTranscript = "";
+        
+        if (isTypingTest) {
+            finalTranscript = document.getElementById("typeResponse").value.trim();
+        } else {
+            finalTranscript = liveTranscript ? liveTranscript.innerText.trim() : "";
+            if (finalTranscript === "" || finalTranscript.startsWith("[Click the Record") || finalTranscript.startsWith("[Media file")) {
+                finalTranscript = "[Video/Audio submission analyzed by AI]";
+            }
+        }
+
+        let answerStatus = forcedStatus || 'answered';
+        if (!forcedStatus && !skipShortCheck && !isTypingTest) {
+            const rawText = liveTranscript ? liveTranscript.innerText.trim() : "";
+            const isPlaceholder = rawText === "" || 
+                                 rawText.startsWith("[Click the Record") || 
+                                 rawText.startsWith("[Media file") || 
+                                 rawText === "[No response / Silent]";
+            
+            const words = isPlaceholder ? [] : rawText.split(/\s+/).filter(w => w.length > 0);
+
+            // 1. EMPTY ANSWER: No speech detected or placeholder transcript
+            if (words.length === 0 || isPlaceholder) {
+                showNotificationToast("noAnswerToast");
+                return;
+            }
+            // 2. SHORT ANSWER: Speech detected but word count < 5
+            else if (words.length < 5 || rawText === "Yes." || rawText === "No." || rawText === "I don't know.") {
+                showNotificationToast("shortAnswerToast");
+                return;
+            }
+        }
+        
+        // Show Loader Overlay
+        loaderOverlay.classList.remove("d-none");
+        loaderOverlay.classList.add("d-flex");
+        
+        // Prepare Form Data
+        const formData = new FormData();
+        formData.append("session_id", sessionId);
+        formData.append("question_text", questionText);
+        formData.append("transcript", finalTranscript);
+        formData.append("duration", accumulatedTime);
+        formData.append("answer_status", answerStatus);
+        formData.append("audio_quality", currentAudioQuality);
+        formData.append("noise_events_count", noiseEventsCount);
+
+        // Add stress metrics
+        formData.append("is_interrupted", isInterrupted ? "true" : "false");
+        if (isInterrupted) {
+            recoveryTime = accumulatedTime - interruptionTime;
+            formData.append("interruption_prompt", interruptionPromptText);
+            formData.append("reaction_time", reactionTime.toFixed(2));
+            formData.append("recovery_time", recoveryTime.toFixed(2));
+            
+            // Calculate speech stability metrics
+            const wordsAfter = finalTranscript.trim().split(/\s+/).length - wordCountBeforeInterruption;
+            const fillersList = ["umm", "um", "ah", "like", "actually", "basically", "you know", "er", "uh"];
+            let fillersCountAfter = 0;
+            const textLower = finalTranscript.toLowerCase().substring(finalTranscript.length / 2);
+            fillersList.forEach(w => {
+                const matches = textLower.match(new RegExp(`\\b${w}\\b`, 'g'));
+                if (matches) fillersCountAfter += matches.length;
+            });
+            formData.append("filler_words_after", fillersCountAfter);
+            formData.append("speech_speed_change", "12.5");
+        }
+        
+        // Add programming language
+        const progLangSelect = document.getElementById("progLanguageSelect");
+        if (progLangSelect) {
+            formData.append("programming_language", progLangSelect.value);
+        }
+        
+        if (activeMediaMode === 'video' && videoBlob) {
+            formData.append("video", videoBlob, "response.webm");
+            formData.append("has_video", "true");
+        } else if (activeMediaMode === 'file' && uploadedFile) {
+            if (uploadedFile.type.startsWith("video/")) {
+                formData.append("video", uploadedFile);
+                formData.append("has_video", "true");
+            } else {
+                formData.append("audio", uploadedFile);
+            }
+        } else if (audioBlob) {
+            formData.append("audio", audioBlob, "response.webm");
+        }
+        
+        fetch("/interview/api/process_answer/", {
+            method: "POST",
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error("HTTP Error Response:", response.status, response.statusText);
+                throw new Error("Server returned HTTP status " + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Hide Loader
+            loaderOverlay.classList.remove("d-flex");
+            loaderOverlay.classList.add("d-none");
+            
+            if (data.status === "check_relevance") {
+                if (data.relevance_category === "not_relevant") {
+                    showNotificationToast("notRelevantToast");
+                } else if (data.relevance_category === "partially_relevant") {
+                    showNotificationToast("partialRelevantToast");
+                }
+                return;
+            }
+
+            const nextQ = data.next_question || data.question;
+            const isComplete = data.interview_complete || data.status === "completed";
+
+            if (isComplete) {
+                // Clear stream when interview completes
+                stopWebcamPreview();
+                // Redirect to report detail page
+                window.location.href = data.redirect_url || `/interview/report/${sessionId}/`;
+            } else if (nextQ || data.status === "next" || data.success) {
+                // Load next question dynamically
+                const finalNextQ = nextQ || "Can you explain your approach in more detail?";
+                document.getElementById("questionText").innerText = finalNextQ;
+                
+                // Update header counters
+                const qNumBadge = document.getElementById("questionNumberBadge");
+                if (qNumBadge && data.question_number && data.total_questions) {
+                    qNumBadge.innerText = `Question ${data.question_number} of ${data.total_questions}`;
+                }
+                
+                // Update Progress bar
+                const progressBar = document.querySelector(".progress-bar");
+                if (progressBar && data.question_number && data.total_questions) {
+                    const percentage = (data.question_number / data.total_questions) * 100;
+                    progressBar.style.width = `${percentage}%`;
+                }
+                
+                // Reset Page & Recording State
+                if (isTypingTest) {
+                    const typeResponse = document.getElementById("typeResponse");
+                    if (typeResponse) {
+                        typeResponse.value = "";
+                        typeResponse.focus();
+                    }
+                    clearInterval(timerInterval);
+                    accumulatedTime = 0.0;
+                    speakingTimer.innerText = "0.0";
+                    startTypingTimer();
+                } else {
+                    if (liveTranscript) {
+                        liveTranscript.innerText = "[Click the Record button below and begin speaking your response...]";
+                    }
+                    speakingTimer.innerText = "0.0";
+                    accumulatedTime = 0.0;
+                    audioBlob = null;
+                    videoBlob = null;
+                    uploadedFile = null;
+                    recordedChunks = [];
+                    
+                    const uploadStatus = document.getElementById("fileUploadStatus");
+                    if (uploadStatus) uploadStatus.classList.add("d-none");
+                    if (recordBtnBg) recordBtnBg.style.opacity = "1";
+                    
+                    // Maintain smooth live webcam preview stream without flickering
+                    if (webcamStream) {
+                        initMediaRecorder('video', webcamStream);
+                    } else if (activeMediaMode === 'video') {
+                        startWebcamPreview();
+                    }
+                }
+                
+                // Reset Interruption & Composure State
+                isInterrupted = false;
+                interruptionPromptText = data.interruption_prompt || "Could you explain that in simpler terms?";
+                interruptionTime = 0.0;
+                reactionTime = 0.0;
+                recoveryTime = 0.0;
+                
+                wordsCounter.innerText = "0";
+                submitBtn.disabled = true;
+                statusMessage.innerText = "Webcam aligned. Ready for next question.";
+                
+                // Re-arm silence timeout for next question
+                if (!isTypingTest) {
+                    startSilenceTimeout();
+                }
+                
+                // Speak the next question
+                setTimeout(speakQuestion, 800);
+            } else {
+                console.error("Unrecognized response payload structure:", data);
+                document.getElementById("questionText").innerText = "Could you tell me a little more about your technical workflow and recent project experiences?";
+                setTimeout(speakQuestion, 800);
+            }
+        })
+        .catch(err => {
+            loaderOverlay.classList.remove("d-flex");
+            loaderOverlay.classList.add("d-none");
+            console.error("Error submitting answer:", err);
+            document.getElementById("questionText").innerText = "Could you explain your general approach to problem solving and debugging?";
+            setTimeout(speakQuestion, 800);
+        });
+    }
+</script>
+{% endblock %}

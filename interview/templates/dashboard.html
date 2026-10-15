@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Placement Readiness Dashboard - AI Interview Stress Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-4 mt-lg-2 fade-in text-start">
+    
+    <!-- Welcome Header Banner -->
+    <div class="glass-card p-4 mb-4 border-indigo" style="background: radial-gradient(circle at 10% 10%, rgba(168, 85, 247, 0.08) 0%, rgba(3,0,20,0.9) 100%); border-radius: 20px;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 class="fw-bold text-white mb-1" style="font-family: 'Space Grotesk', sans-serif;">Welcome, {{ user.first_name|default:user.username }}!</h2>
+                <p class="text-muted mb-0">Track your interview composure, technical reasoning steps, and manage your credentials in one workspace.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'ai_interview' %}" class="btn btn-premium-cyan py-2 px-3 fs-8 text-uppercase fw-bold"><i class="fa-solid fa-play me-2"></i>Start Interview</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions deck row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'ai_interview' %}" class="glass-card p-3 d-flex align-items-center gap-3 text-decoration-none hover-glow transition-all w-100 h-100">
+                <i class="fa-solid fa-robot text-purple-400 fs-4"></i>
+                <div>
+                    <span class="d-block fw-bold text-white small">AI INTERVIEW STUDIO</span>
+                    <small class="text-muted fs-8">Role-based placement rounds</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'resume_analyzer' %}" class="glass-card p-3 d-flex align-items-center gap-3 text-decoration-none hover-glow transition-all w-100 h-100">
+                <i class="fa-solid fa-file-pdf text-cyan-400 fs-4"></i>
+                <div>
+                    <span class="d-block fw-bold text-white small">RESUME ANALYZER</span>
+                    <small class="text-muted fs-8">ATS keyword matching</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'learning_center' %}" class="glass-card p-3 d-flex align-items-center gap-3 text-decoration-none hover-glow transition-all w-100 h-100">
+                <i class="fa-solid fa-graduation-cap text-success fs-4"></i>
+                <div>
+                    <span class="d-block fw-bold text-white small">LEARNING CENTER</span>
+                    <small class="text-muted fs-8">Skill preparation</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN METRICS & SETTINGS GRID -->
+    <div class="row g-4">
+        
+        <!-- Left: Readiness Indicators & Badges -->
+        <div class="col-lg-7">
+            <div class="glass-card p-4 mb-4">
+                <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                    <i class="fa-solid fa-square-poll-vertical text-purple-400 me-2"></i>AI Performance Dashboard
+                </h5>
+                
+                <div class="row g-3 mb-4">
+                    <!-- Overall Score -->
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded-4 border border-secondary border-opacity-10 text-center" style="background: var(--elevated-bg);">
+                            <h3 class="fw-bold text-cyan-400 mb-0 font-monospace">{{ avg_score|default:"0" }}</h3>
+                            <small class="text-muted d-block mt-1">Overall Interview Score</small>
+                        </div>
+                    </div>
+                    <!-- Stress Handling -->
+                    <div class="col-md-4 col-6">
+                        <div class="p-3 rounded-4 border border-secondary border-opacity-10 text-center" style="background: var(--elevated-bg);">
+                            <h3 class="fw-bold text-danger mb-0 font-monospace">{{ avg_stress_handling|default:"80" }}</h3>
+                            <small class="text-muted d-block mt-1">Stress Composure</small>
+                        </div>
+                    </div>
+                    <!-- Cognitive Reasoning -->
+                    <div class="col-md-4 col-12">
+                        <div class="p-3 rounded-4 border border-secondary border-opacity-10 text-center" style="background: var(--elevated-bg);">
+                            <h3 class="fw-bold text-purple-400 mb-0 font-monospace">{{ avg_cog_reasoning|default:"80" }}</h3>
+                            <small class="text-muted d-block mt-1">Cognitive Reasoning</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameter Progress bars -->
+                <div class="d-flex flex-column gap-3 mb-2">
+                    <div>
+                        <div class="d-flex justify-content-between text-light small mb-1">
+                            <span>COMMUNICATION VERBAL PASE</span>
+                            <span class="text-white">{{ avg_comm|default:"75" }}%</span>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.05);">
+                            <div class="progress-bar bg-info" style="width: {{ avg_comm|default:'75' }}%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between text-light small mb-1">
+                            <span>COGNITIVE PROBLEM SOLVING</span>
+                            <span class="text-white">{{ avg_prob_solving|default:"80" }}%</span>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.05);">
+                            <div class="progress-bar bg-purple" style="width: {{ avg_prob_solving|default:'80' }}%; background: var(--accent-purple) !important;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recruiter diagnostics checklist -->
+            <div class="glass-card p-4">
+                <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                    <i class="fa-solid fa-list-check text-cyan-400 me-2"></i>Recruiter Insights & Feedback
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4" style="background: var(--elevated-bg);">
+                            <small class="text-muted font-monospace d-block">LATEST INTERVIEW</small>
+                            <span class="fw-bold text-white small">
+                                {% if sessions.first %}
+                                    {{ sessions.first.get_interview_type_display }}
+                                {% else %}
+                                    None completed yet
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4" style="background: var(--elevated-bg);">
+                            <small class="text-muted font-monospace d-block">WEAKEST PARAMETER</small>
+                            <span class="fw-bold text-danger small">
+                                {% if avg_filler < 70 %}
+                                    Filler Words Control
+                                {% else %}
+                                    Post-Interruption Composure
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4" style="background: var(--elevated-bg);">
+                            <small class="text-muted font-monospace d-block">BEST PERFORMANCE AREA</small>
+                            <span class="fw-bold text-success small">Technical Explanations</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4" style="background: var(--elevated-bg);">
+                            <small class="text-muted font-monospace d-block">RECOMMENDED PRACTICE</small>
+                            <span class="fw-bold text-cyan-400 small">Practice Interruption Sessions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Profile Settings & Info -->
+        <div class="col-lg-5">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                        <i class="fa-solid fa-user-gear text-purple-400 me-2"></i>Candidate Profile Settings
+                    </h5>
+                    
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            <img src="/static/images/professional-profile.jpg" class="rounded-circle border border-3 border-secondary border-opacity-25 shadow" style="width: 100px; height: 100px; object-fit: cover;" alt="Candidate Avatar">
+                            <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle p-1.5" style="transform: translate(-10%, -10%);"></span>
+                        </div>
+                        <h6 class="fw-bold text-white mt-2 mb-0">{{ user.first_name|default:user.username }} {{ user.last_name|default:"" }}</h6>
+                        <small class="text-muted font-monospace">{{ user.profile.target_role|default:'Software Engineer' }}</small>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" action="{% url 'dashboard' %}">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold font-monospace text-uppercase">First Name</label>
+                                <input type="text" class="form-control form-control-custom" value="{{ user.first_name }}" readonly style="background: rgba(6, 4, 18, 0.455);">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold font-monospace text-uppercase">Last Name</label>
+                                <input type="text" class="form-control form-control-custom" value="{{ user.last_name }}" readonly style="background: rgba(6, 4, 18, 0.455);">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-bold font-monospace text-uppercase">Email Address</label>
+                                <input type="email" class="form-control form-control-custom" value="{{ user.email }}" readonly style="background: rgba(6, 4, 18, 0.455);">
+                            </div>
+                            <div class="col-12">
+                                <label for="target_role" class="form-label text-muted small fw-bold font-monospace text-uppercase">Target Role</label>
+                                <input type="text" name="target_role" id="target_role" value="{{ user.profile.target_role|default:'Software Engineer' }}" class="form-control form-control-custom" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="bio" class="form-label text-muted small fw-bold font-monospace text-uppercase">Bio / Highlights</label>
+                                <textarea name="bio" id="bio" rows="3" class="form-control form-control-custom" placeholder="Brief statement detailing your projects or training...">{{ user.profile.bio|default:'' }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <label for="resume" class="form-label text-muted small fw-bold font-monospace text-uppercase">Active Resume File</label>
+                                <input type="file" name="resume" id="resume" class="form-control form-control-custom">
+                                {% if user.profile.resume %}
+                                    <div class="mt-2 small">
+                                        <a href="{{ user.profile.resume.url }}" target="_blank" class="text-cyan-400 text-decoration-none">
+                                            <i class="fa-solid fa-file-pdf me-1"></i>View Uploaded Resume
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 text-end mt-4">
+                                <button type="submit" class="btn btn-premium px-5 py-2">Update Profile Settings</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .col-md-2-5 {
+        flex: 0 0 auto;
+        width: 20%;
+    }
+    @media (max-width: 991.98px) {
+        .col-md-2-5 {
+            width: 33.3333%;
+        }
+    }
+    @media (max-width: 575.98px) {
+        .col-md-2-5 {
+            width: 50%;
+        }
+    }
+</style>
+{% endblock %}

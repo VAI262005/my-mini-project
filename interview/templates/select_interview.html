@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Choose Your Interview Arena - AI Interview Performance Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Asymmetric Grid Layouts */
+    .arena-banner {
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%);
+        border: 1.5px solid var(--glass-border);
+        border-radius: 20px;
+    }
+    .arena-card-purple {
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+    }
+    .arena-card-purple:hover {
+        border-color: var(--accent-purple);
+        box-shadow: var(--glow-purple);
+    }
+    .arena-card-cyan {
+        background: linear-gradient(135deg, rgba(8, 145, 178, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+    }
+    .arena-card-cyan:hover {
+        border-color: var(--accent-cyan);
+        box-shadow: var(--glow-cyan);
+    }
+    
+    .arena-highlight {
+        background: radial-gradient(circle at 10% 10%, rgba(124, 58, 237, 0.08) 0%, rgba(8, 145, 178, 0.05) 50%, rgba(255, 255, 255, 0.95) 100%);
+        border: 2px solid var(--accent-cyan);
+        border-radius: 24px;
+        box-shadow: var(--glow-cyan);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-lg-3 fade-in text-start">
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+            ⚔️ Simulation Decks
+        </span>
+        <h1 class="fw-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Choose Your Interview Arena</h1>
+        <p class="text-muted fs-5 mb-4">Practice placement rounds on dynamic simulators built to grade communication, confidence, and coding structures.</p>
+
+        <!-- JOB ROLE SELECTOR BAR -->
+        <div class="glass-card p-4 mx-auto text-start mb-5" style="max-width: 850px; background: rgba(15, 23, 42, 0.85); border: 1.5px solid var(--accent-cyan); border-radius: 20px; box-shadow: 0 0 25px rgba(6, 182, 212, 0.15);">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
+                <div>
+                    <h5 class="fw-bold text-white mb-1"><i class="fa-solid fa-user-gear text-cyan-400 me-2"></i>Select Target Job Role</h5>
+                    <small class="text-muted font-monospace">Questions & AI Interruptions will be dynamically generated for your chosen role.</small>
+                </div>
+                <div style="min-width: 250px;">
+                    <select class="form-select form-control-custom bg-dark text-white fw-bold border-cyan py-2 px-3" id="jobRoleSelect" onchange="onRoleChanged(this.value)">
+                        {% for r in job_roles %}
+                            <option value="{{ r }}" {% if r == user_target_role %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Role Pills -->
+            <div class="d-flex flex-wrap gap-2 pt-2 border-top border-secondary border-opacity-20" id="rolePillsContainer">
+                {% for r in job_roles %}
+                    <button type="button" class="btn btn-sm role-pill-btn {% if r == user_target_role %}btn-info text-dark fw-bold{% else %}btn-outline-secondary text-light{% endif %} font-monospace" onclick="selectRolePill('{{ r }}', this)" style="font-size: 0.8rem; border-radius: 12px;">
+                        {{ r }}
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Asymmetric Layout Blocks -->
+    <div class="row g-4 align-items-stretch">
+        
+        <!-- 0. ADAPTIVE STRESS ROUND -->
+        <div class="col-12">
+            <div class="glass-card arena-highlight p-5 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-4">
+                <div class="text-start">
+                    <span class="badge py-1 px-3 mb-3 fs-9 font-monospace" style="background: rgba(6, 182, 212, 0.15); border: 1px solid var(--accent-cyan); color: #0891b2 !important;">AI-DRIVEN CONVERSATION</span>
+                    <h3 class="fw-bold text-white mb-2">ADAPTIVE STRESS ROUND</h3>
+                    <p class="text-muted mb-0" style="max-width: 600px;">
+                        Adaptive NLP • Live Topic Trapping • Real-time Stress Interruption. The AI interviewer analyzes your answers in real-time, generates tailored follow-up questions dynamically, and injects controlled interruptions to test your composure recovery.
+                    </p>
+                    <div class="d-flex gap-4 mt-3 flex-wrap small text-light font-monospace">
+                        <div>Difficulty: <strong class="text-danger">Advanced</strong></div>
+                        <div>Duration: <strong class="text-white">12 Mins</strong></div>
+                        <div>Questions: <strong class="text-white">Adaptive Flow</strong></div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'start_interview' 'adaptive' %}" class="btn btn-premium py-3 px-5 text-uppercase fw-bold text-decoration-none">
+                        START ADAPTIVE ROUND
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. HR ROUND (Full Width wide banner feel) -->
+        <div class="col-12">
+            <div class="glass-card arena-banner p-5 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-4">
+                <div class="text-start">
+                    <span class="badge py-1 px-3 mb-3 fs-9 font-monospace" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--accent-purple); color: var(--accent-violet) !important;">GENERAL HR</span>
+                    <h3 class="fw-bold text-white mb-2">HR ROUND</h3>
+                    <p class="text-muted mb-0" style="max-width: 600px;">
+                        Communication • Personality • Culture Fit. Showcase your behavior models, company alignment, and career aspirations.
+                    </p>
+                    <div class="d-flex gap-4 mt-3 flex-wrap small text-light font-monospace">
+                        <div>Difficulty: <strong class="text-success">Beginner</strong></div>
+                        <div>Duration: <strong class="text-white">10 Mins</strong></div>
+                        <div>Questions: <strong class="text-white">3 Prompts</strong></div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'start_interview' 'hr' %}" class="btn btn-premium py-3 px-5 text-uppercase fw-bold text-decoration-none">
+                        START HR ROUND
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. TECHNICAL ROUND (50% left card) -->
+        <div class="col-lg-6">
+            <div class="glass-card arena-card-cyan p-5 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <span class="badge py-1 px-3 mb-3 fs-9 font-monospace" style="background: rgba(6, 182, 212, 0.15); border: 1px solid var(--accent-cyan); color: #0891b2 !important;">CORE CONCEPTS</span>
+                    <h3 class="fw-bold text-white mb-2">TECHNICAL ROUND</h3>
+                    <p class="text-muted mb-4">
+                        Programming • DBMS • OS • Networks. Test your foundational computer science paradigms and conceptual base cases.
+                    </p>
+                    <div class="d-flex gap-4 mb-4 flex-wrap small text-light font-monospace">
+                        <div>Difficulty: <strong class="text-warning">Intermediate</strong></div>
+                        <div>Duration: <strong class="text-white">15 Mins</strong></div>
+                        <div>Questions: <strong class="text-white">3 Prompts</strong></div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'start_interview' 'programming' %}" class="btn btn-premium-cyan w-100 py-3 text-uppercase fw-bold text-decoration-none">
+                        START TECH ROUND
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. BEHAVIORAL ROUND (50% right card) -->
+        <div class="col-lg-6">
+            <div class="glass-card arena-card-purple p-5 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <span class="badge py-1 px-3 mb-3 fs-9 font-monospace" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--accent-purple); color: var(--accent-violet) !important;">STAR METHODOLOGY</span>
+                    <h3 class="fw-bold text-white mb-2">BEHAVIORAL ROUND</h3>
+                    <p class="text-muted mb-4">
+                        Leadership • Teamwork • Problem Solving. Structure stories from your projects, resolving conflicts and managing deadlines.
+                    </p>
+                    <div class="d-flex gap-4 mb-4 flex-wrap small text-light font-monospace">
+                        <div>Difficulty: <strong class="text-warning">Intermediate</strong></div>
+                        <div>Duration: <strong class="text-white">12 Mins</strong></div>
+                        <div>Questions: <strong class="text-white">3 Prompts</strong></div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'start_interview' 'behavioral' %}" class="btn btn-premium w-100 py-3 text-uppercase fw-bold text-decoration-none">
+                        START BEHAVIORAL ROUND
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. CODING ROUND (Large highlighted card) -->
+        <div class="col-lg-8">
+            <div class="glass-card arena-highlight p-5 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <span class="badge py-1 px-3 mb-3 fs-9 font-monospace" style="background: rgba(6, 182, 212, 0.15); border: 1px solid var(--accent-cyan); color: #0891b2 !important;">COMPILERS ONLINE</span>
+                    <h3 class="fw-bold text-white mb-2">CODING ROUND</h3>
+                    <p class="text-muted mb-4">
+                        Logic • Algorithms • Problem Solving. Overcome challenging programming inputs and write clean functions in Python, JS, or SQL.
+                    </p>
+                    <div class="d-flex gap-4 mb-4 flex-wrap small text-light font-monospace">
+                        <div>Difficulty: <strong class="text-danger">Advanced</strong></div>
+                        <div>Duration: <strong class="text-white">20 Mins</strong></div>
+                        <div>Questions: <strong class="text-white">3 Challenges</strong></div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'start_interview' 'programming' %}" class="btn btn-premium-cyan py-3 px-5 text-uppercase fw-bold text-decoration-none">
+                        START CODING ROUND
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. COMMUNICATION ROUND (Sleek sidebar card) -->
+        <div class="col-lg-4">
+            <div class="glass-card arena-card-purple p-5 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <span class="badge py-1 px-3 mb-3 fs-9 font-monospace" style="background: rgba(168, 85, 247, 0.15); border: 1px solid var(--accent-purple); color: var(--accent-violet) !important;">SPEECH DIAGNOSTICS</span>
+                    <h3 class="fw-bold text-white mb-2">COMMUNICATION</h3>
+                    <p class="text-muted mb-4">
+                        Fluency • Clarity • Confidence. Practice conversational pacing and reduce speech fillers.
+                    </p>
+                    <div class="d-flex gap-4 mb-4 flex-wrap small text-light font-monospace">
+                        <div>Difficulty: <strong class="text-success">Beginner</strong></div>
+                        <div>Duration: <strong class="text-white">8 Mins</strong></div>
+                        <div>Questions: <strong class="text-white">3 Prompts</strong></div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'start_interview' 'leadership' %}" class="btn btn-premium w-100 py-3 text-uppercase fw-bold text-decoration-none">
+                        START COMM ROUND
+                    </a>
+                </div>
+            </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateStartLinks(role) {
+        const links = document.querySelectorAll("a[href*='/interview/start/']");
+        links.forEach(a => {
+            const baseUrl = a.href.split('?')[0];
+            a.href = `${baseUrl}?job_role=${encodeURIComponent(role)}`;
+        });
+    }
+
+    function onRoleChanged(role) {
+        // Update pills
+        const pills = document.querySelectorAll(".role-pill-btn");
+        pills.forEach(btn => {
+            if (btn.innerText.trim() === role) {
+                btn.className = "btn btn-sm role-pill-btn btn-info text-dark fw-bold font-monospace";
+            } else {
+                btn.className = "btn btn-sm role-pill-btn btn-outline-secondary text-light font-monospace";
+            }
+        });
+        updateStartLinks(role);
+    }
+
+    function selectRolePill(role, btn) {
+        const select = document.getElementById("jobRoleSelect");
+        if (select) {
+            select.value = role;
+        }
+        onRoleChanged(role);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const initialRole = document.getElementById("jobRoleSelect") ? document.getElementById("jobRoleSelect").value : "Software Developer";
+        updateStartLinks(initialRole);
+    });
+</script>
+{% endblock %}

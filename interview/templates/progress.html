@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Progress Tracking - AI Interview Performance Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-3 fade-in text-start">
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); color: #06b6d4;">
+            📈 Growth Indicators
+        </span>
+        <h1 class="fw-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Monitor Your Improvement</h1>
+        <p class="text-muted fs-5">Aggregates overall stats and progress markers over weeks of training.</p>
+    </div>
+
+    <!-- Stats Cards Grid -->
+    <div class="row g-4 text-center justify-content-center mb-5">
+        <!-- 1. Completed Interviews -->
+        <div class="col-md-4 col-sm-6">
+            <div class="glass-card p-4 h-100 border-indigo">
+                <i class="fa-solid fa-graduation-cap text-purple-400 fs-2 mb-3"></i>
+                <h3 class="fw-bold text-white mb-1">{{ sessions_count|default:"0" }}</h3>
+                <small class="text-muted">Completed Sessions</small>
+            </div>
+        </div>
+
+        <!-- 2. Average Score -->
+        <div class="col-md-4 col-sm-6">
+            <div class="glass-card p-4 h-100 border-indigo">
+                <i class="fa-solid fa-award text-warning fs-2 mb-3"></i>
+                <h3 class="fw-bold text-white mb-1">{{ avg_score|default:"80" }}/100</h3>
+                <small class="text-muted">Average Score</small>
+            </div>
+        </div>
+
+        <!-- 3. Stress Composure -->
+        <div class="col-md-4 col-sm-12">
+            <div class="glass-card p-4 h-100 border-indigo">
+                <i class="fa-solid fa-heart-pulse text-danger fs-2 mb-3"></i>
+                <h3 class="fw-bold text-danger mb-1">Stabilized</h3>
+                <small class="text-muted">Composure Level</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="glass-card p-4 border-indigo">
+                <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-chart-line text-cyan-400 me-2"></i>Overall Score Trend</h5>
+                <div style="position: relative; height: 220px;">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-card p-4 border-indigo">
+                <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-gauge-high text-danger me-2"></i>Stress Composure Trend</h5>
+                <div style="position: relative; height: 220px;">
+                    <canvas id="stressChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-card p-4 border-indigo">
+                <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-comments text-purple-400 me-2"></i>Communication Trend</h5>
+                <div style="position: relative; height: 220px;">
+                    <canvas id="commChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-card p-4 border-indigo">
+                <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-brain text-cyan-400 me-2"></i>Cognitive Reasoning Trend</h5>
+                <div style="position: relative; height: 220px;">
+                    <canvas id="cogChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const dates = JSON.parse('{{ chart_dates_json|escapejs }}');
+        const scores = JSON.parse('{{ chart_scores_json|escapejs }}');
+        const stress = JSON.parse('{{ chart_stress_json|escapejs }}');
+        const comm = JSON.parse('{{ chart_comm_json|escapejs }}');
+        const cog = JSON.parse('{{ chart_cog_json|escapejs }}');
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8' }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        };
+
+        // Score Chart
+        new Chart(document.getElementById("scoreChart").getContext("2d"), {
+            type: 'line',
+            data: {
+                labels: dates.length ? dates : ['Point 1', 'Point 2', 'Point 3'],
+                datasets: [{
+                    data: scores.length ? scores : [75, 82, 88],
+                    borderColor: '#a855f7',
+                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: commonOptions
+        });
+
+        // Stress Chart
+        new Chart(document.getElementById("stressChart").getContext("2d"), {
+            type: 'line',
+            data: {
+                labels: dates.length ? dates : ['Point 1', 'Point 2', 'Point 3'],
+                datasets: [{
+                    data: stress.length ? stress : [80, 78, 85],
+                    borderColor: '#f43f5e',
+                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: commonOptions
+        });
+
+        // Comm Chart
+        new Chart(document.getElementById("commChart").getContext("2d"), {
+            type: 'line',
+            data: {
+                labels: dates.length ? dates : ['Point 1', 'Point 2', 'Point 3'],
+                datasets: [{
+                    data: comm.length ? comm : [70, 75, 82],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: commonOptions
+        });
+
+        // Cog Chart
+        new Chart(document.getElementById("cogChart").getContext("2d"), {
+            type: 'line',
+            data: {
+                labels: dates.length ? dates : ['Point 1', 'Point 2', 'Point 3'],
+                datasets: [{
+                    data: cog.length ? cog : [72, 80, 84],
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: commonOptions
+        });
+    });
+</script>
+{% endblock %}

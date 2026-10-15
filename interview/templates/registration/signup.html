@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - AI Interview Performance Analyzer{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="glass-card p-5 fade-in text-start">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center mb-3 rounded-circle" 
+                          style="width: 64px; height: 64px; background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.3);">
+                        <i class="fa-solid fa-user-plus text-cyan-400 fs-3" style="color: #22d3ee;"></i>
+                    </div>
+                    <h2 class="fw-bold text-white">Create Account</h2>
+                    <p class="text-muted">Start training and analyze your interview skills</p>
+                </div>
+
+                <form method="POST" action="{% url 'signup' %}">
+                    {% csrf_token %}
+                    
+                    <!-- 1. Username (Name) -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label text-light small fw-bold text-uppercase" style="color: #cbd5e1; letter-spacing: 0.5px;">Username (Name)</label>
+                        <input type="text" name="username" id="username" class="form-control form-control-custom" placeholder="johndoe" required>
+                    </div>
+
+                    <!-- 2. First Name & Last Name -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label text-light small fw-bold text-uppercase" style="color: #cbd5e1; letter-spacing: 0.5px;">First Name</label>
+                            <input type="text" name="first_name" id="first_name" class="form-control form-control-custom" placeholder="John" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label text-light small fw-bold text-uppercase" style="color: #cbd5e1; letter-spacing: 0.5px;">Last Name</label>
+                            <input type="text" name="last_name" id="last_name" class="form-control form-control-custom" placeholder="Doe" required>
+                        </div>
+                    </div>
+
+                    <!-- 3. Email Address -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label text-light small fw-bold text-uppercase" style="color: #cbd5e1; letter-spacing: 0.5px;">Email Address</label>
+                        <input type="email" name="email" id="email" class="form-control form-control-custom" placeholder="john@example.com" required>
+                    </div>
+
+                    <!-- 4. Target Role -->
+                    <div class="mb-3">
+                        <label for="target_role" class="form-label text-light small fw-bold text-uppercase" style="color: #cbd5e1; letter-spacing: 0.5px;">Target Job Role</label>
+                        <select name="target_role" id="target_role" class="form-select form-control-custom">
+                            <option value="Software Engineer" selected>Software Engineer</option>
+                            <option value="Frontend Developer">Frontend Developer</option>
+                            <option value="Backend Developer">Backend Developer</option>
+                            <option value="Full Stack Developer">Full Stack Developer</option>
+                            <option value="Data Scientist">Data Scientist</option>
+                            <option value="Database Administrator">Database Administrator</option>
+                            <option value="Product Manager">Product Manager</option>
+                            <option value="HR Recruiter / Trainer">HR Recruiter / Trainer</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. Password & Confirm -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label text-light small fw-bold text-uppercase" style="color: #cbd5e1; letter-spacing: 0.5px;">Password</label>
+                            <input type="password" name="password" id="password" class="form-control form-control-custom" placeholder="••••••••" required>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label for="confirm_password" class="form-label text-light small fw-bold text-uppercase" style="color: #cbd5e1; letter-spacing: 0.5px;">Confirm Password</label>
+                            <input type="password" name="confirm_password" id="confirm_password" class="form-control form-control-custom" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-premium w-100 py-3">
+                        <i class="fa-solid fa-user-plus me-2"></i> Register
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 pt-2 border-top border-secondary border-opacity-10">
+                    <p class="mb-0 text-muted">Already have an account? <a href="{% url 'login' %}" class="fw-bold text-decoration-none text-indigo-400">Log In here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>        </div>
+    </div>
+</div>
+{% endblock %}

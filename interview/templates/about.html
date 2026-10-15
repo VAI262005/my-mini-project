@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us - AI Interview Performance Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-4 fade-in text-start">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="glass-card p-5 border-indigo">
+                <span class="badge py-2 px-3 mb-3 fs-8 text-uppercase font-monospace" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+                    ℹ System Intelligence
+                </span>
+                
+                <h1 class="fw-bold text-main mb-4" style="font-family: 'Space Grotesk', sans-serif;">About AI Interview Performance Analyzer</h1>
+                
+                <p class="text-muted fs-5 mb-4" style="line-height: 1.8;">
+                    The AI Interview Performance Analyzer is an intelligent placement preparation platform developed to help students improve interview skills through Artificial Intelligence. The system analyzes speech, communication, confidence, grammar, and technical responses, providing HR-style feedback to prepare candidates for real-world interviews.
+                </p>
+
+                <div class="border-top border-secondary border-opacity-10 pt-4 mt-5">
+                    <h5 class="fw-bold text-main mb-3">Core Assessment Capabilities</h5>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <span class="d-block fw-bold text-main small mb-1"><i class="fa-solid fa-volume-high text-cyan-400 me-2"></i>Speech & Language NLP</span>
+                            <small class="text-muted">Extracts keywords, tracks grammatical syntax errors, and counts speech fillers like "um", "like", or "actually".</small>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="d-block fw-bold text-main small mb-1"><i class="fa-solid fa-eye text-purple-400 me-2"></i>Visual Framing Analysis</span>
+                            <small class="text-muted">Checks camera eye contact focus boundaries and body posture alignment to evaluate confidence presentation.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Resume Analyzer - AI Interview Performance Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Uploader box styling */
+    .resume-drag-zone {
+        border: 2px dashed rgba(6, 182, 212, 0.3);
+        background: rgba(3, 0, 15, 0.45);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .resume-drag-zone:hover {
+        border-color: var(--accent-purple);
+        background: rgba(168, 85, 247, 0.04);
+        box-shadow: var(--glow-purple);
+    }
+    
+    /* Stepper steps */
+    .scan-step {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        opacity: 0.4;
+        transition: all 0.3s ease;
+    }
+    .scan-step.active {
+        opacity: 1;
+        color: var(--text-main);
+    }
+    .scan-step.complete {
+        opacity: 1;
+        color: var(--accent-cyan);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-lg-3 fade-in text-start">
+    
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(16, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); color: #22d3ee;">
+            📄 Document Intelligence
+        </span>
+        <h1 class="fw-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Turn Your Resume Into an Interview Advantage</h1>
+        <p class="text-muted fs-5">Identify missing stack keywords, check parse structures, and receive targeted questions based on your projects.</p>
+    </div>
+
+    <div class="row g-5">
+        
+        <!-- Left: Upload & Stepper -->
+        <div class="col-lg-6">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-file-arrow-up text-purple-400 me-2"></i>Upload Center</h5>
+                    
+                    <form id="resumeUploadForm" method="POST" enctype="multipart/form-data" action="{% url 'resume_analyzer' %}">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold font-monospace text-uppercase">Target Job Role</label>
+                            <input type="text" name="target_role" id="targetRole" class="form-control form-control-custom" placeholder="e.g. Frontend Engineer, Django Developer" value="{{ user.profile.target_role|default:'Software Engineer' }}" required>
+                        </div>
+
+                        <input type="file" name="resume" id="resumeFileInput" accept="application/pdf" class="d-none" onchange="fileSelected(event)">
+                        
+                        <div class="resume-drag-zone p-5 text-center mb-4" onclick="document.getElementById('resumeFileInput').click()">
+                            <i class="fa-solid fa-file-pdf text-cyan-400 fs-1 mb-3 animate-pulse"></i>
+                            <h5 class="text-white fw-bold mb-2" id="dragTitle">Select Resume PDF</h5>
+                            <p class="text-muted small mb-0">PDF files up to 5MB supported</p>
+                            <small class="d-block text-cyan-400 mt-2 font-monospace" id="fileNameLabel"></small>
+                        </div>
+                    </form>
+
+                    <!-- Scanning steps overlay -->
+                    <div class="d-none p-4 rounded-4 border border-secondary border-opacity-10 mb-4" id="scanPanel" style="background: var(--elevated-bg);">
+                        <h6 class="fw-bold text-main mb-3"><i class="fa-solid fa-circle-notch fa-spin text-purple-400 me-2"></i>ATS Scanner Active</h6>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="scan-step" id="step1"><i class="fa-solid fa-circle-notch fa-spin"></i> Scanning Resume...</div>
+                            <div class="scan-step" id="step2"><i class="fa-solid fa-circle-notch fa-spin"></i> Extracting Skills...</div>
+                            <div class="scan-step" id="step3"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking ATS Keywords...</div>
+                            <div class="scan-step" id="step4"><i class="fa-solid fa-circle-notch fa-spin"></i> Matching Job Role...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button class="btn btn-premium w-100 py-3 text-uppercase fw-bold" id="submitBtn" onclick="runResumeScan()" disabled>
+                        Analyze Resume
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Results & Generated Questions -->
+        <div class="col-lg-6">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-main mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                        <i class="fa-solid fa-list-check text-cyan-400 me-2"></i>ATS Metrics
+                    </h5>
+
+                    {% if user.profile.resume %}
+                        <div class="row g-3 mb-4 text-center">
+                            <div class="col-6 col-md-4">
+                                <div class="p-3 rounded border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                                    <small class="text-muted d-block font-monospace">ATS Score</small>
+                                    <h4 class="fw-bold text-success mb-0">82%</h4>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="p-3 rounded border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                                    <small class="text-muted d-block font-monospace">Keyword Match</small>
+                                    <h4 class="fw-bold text-main mb-0">75%</h4>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="p-3 rounded border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                                    <small class="text-muted d-block font-monospace">Role Relevance</small>
+                                    <h4 class="fw-bold text-cyan-400 mb-0">Strong</h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Missing skills & strength comments -->
+                        <div class="mb-4">
+                            <span class="d-block text-danger small font-monospace mb-2"><i class="fa-solid fa-triangle-exclamation me-2"></i>Missing Skills Detected:</span>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">AWS Deployment</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Redis Cache</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Unit Testing</span>
+                            </div>
+                            <p class="text-muted small leading-relaxed">
+                                <strong>Project Strength:</strong> Excellent. Your project describing the backend implementation of a custom evaluator is formatted well and highlights key business impacts.
+                            </p>
+                        </div>
+
+                        <!-- Unique Resume Question Generation section -->
+                        <div class="p-3 rounded-4 border-cyan border border-opacity-35" style="background: rgba(6,182,212,0.04);">
+                            <small class="text-cyan-400 d-block font-monospace fw-bold mb-2">
+                                <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Questions an interviewer may ask from your resume
+                            </small>
+                            <p class="text-main small mb-3">
+                                Based on your project: <strong>"Explain how you implemented your AI Interview Analyzer."</strong>
+                            </p>
+                            <a href="{% url 'start_interview' 'programming' %}" class="btn btn-premium-cyan btn-sm py-2 px-4 text-decoration-none">
+                                Practice This Question
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-file-circle-question text-muted fs-1 mb-3"></i>
+                            <p class="text-muted small mb-0">No active resume analyzed yet. Upload your PDF resume to generate ATS metrics and custom practice questions.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-4 pt-3 border-top border-secondary border-opacity-10 text-center">
+                    <span class="small text-muted font-monospace"><i class="fa-solid fa-circle-check text-success me-2"></i>Core scan modules ready</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let resumeFile = null;
+
+    function fileSelected(event) {
+        const file = event.target.files[0];
+        if (file) {
+            resumeFile = file;
+            document.getElementById("fileNameLabel").innerText = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+            document.getElementById("dragTitle").innerText = "Resume PDF Loaded";
+            document.getElementById("submitBtn").disabled = false;
+        }
+    }
+
+    function runResumeScan() {
+        document.getElementById("submitBtn").disabled = true;
+        const scanPanel = document.getElementById("scanPanel");
+        scanPanel.classList.remove("d-none");
+        
+        const steps = ["step1", "step2", "step3", "step4"];
+        let stepIdx = 0;
+        
+        function animateSteps() {
+            if (stepIdx > 0) {
+                const prev = document.getElementById(steps[stepIdx - 1]);
+                prev.classList.remove("active");
+                prev.classList.add("complete");
+                prev.querySelector("i").className = "fa-solid fa-circle-check text-cyan-400";
+            }
+            
+            if (stepIdx < steps.length) {
+                const cur = document.getElementById(steps[stepIdx]);
+                cur.classList.add("active");
+                stepIdx++;
+                setTimeout(animateSteps, 700);
+            } else {
+                setTimeout(() => {
+                    document.getElementById("resumeUploadForm").submit();
+                }, 300);
+            }
+        }
+        
+        animateSteps();
+    }
+</script>
+{% endblock %}

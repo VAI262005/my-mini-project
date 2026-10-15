@@ -1,0 +1,1034 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Video Analysis Studio - AI Interview Performance Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Step panels */
+    .studio-panel {
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    /* Option selectors */
+    .option-card {
+        background: var(--elevated-bg);
+        border: 2px dashed rgba(168, 85, 247, 0.2);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .option-card:hover {
+        border-color: var(--accent-cyan);
+        background: rgba(6, 182, 212, 0.05);
+        box-shadow: var(--glow-cyan);
+        transform: translateY(-2px);
+    }
+
+    /* Scanning Step styles */
+    .scan-step {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        opacity: 0.3;
+        transition: all 0.3s ease;
+    }
+    .scan-step.active {
+        opacity: 1;
+        color: var(--text-main);
+    }
+    .scan-step.complete {
+        opacity: 1;
+        color: var(--accent-cyan);
+    }
+
+    /* Timeline segment items */
+    .timeline-bar-item {
+        background: rgba(0,0,0,0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .timeline-bar-item:hover, .timeline-bar-item.active {
+        background: rgba(168, 85, 247, 0.08);
+        border-color: var(--accent-purple);
+        box-shadow: var(--glow-purple);
+    }
+
+    /* Waveform visual bars */
+    .waveform-bar {
+        width: 4px;
+        background: var(--accent-cyan);
+        border-radius: 2px;
+        transition: height 0.2s ease;
+    }
+    .waveform-bar.filler {
+        background: #f43f5e !important;
+    }
+
+    /* Circular SVG Gauge */
+    .result-gauge-circle {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+    }
+    .result-gauge-circle svg {
+        transform: rotate(-90deg);
+    }
+    .result-gauge-bg {
+        fill: none;
+        stroke: rgba(0,0,0,0.05);
+        stroke-width: 10;
+    }
+    .result-gauge-bar {
+        fill: none;
+        stroke: url(#studioResultGradient);
+        stroke-width: 10;
+        stroke-linecap: round;
+        stroke-dasharray: 440;
+        stroke-dashoffset: 440;
+        animation: fillResultDials 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fillResultDials {
+        to { stroke-dashoffset: 52.8; } /* 88% of 440 */
+    }
+
+    /* Small parameter progress rings */
+    .progress-ring-box {
+        position: relative;
+        width: 80px;
+        height: 80px;
+    }
+    .progress-ring-bg {
+        fill: none;
+        stroke: rgba(0,0,0,0.05);
+        stroke-width: 6;
+    }
+    .progress-ring-bar {
+        fill: none;
+        stroke-width: 6;
+        stroke-linecap: round;
+        stroke-dasharray: 220;
+        stroke-dashoffset: 220;
+        transition: stroke-dashoffset 1s ease-out;
+    }
+
+    /* Day planner steps */
+    .day-step-card {
+        background: var(--elevated-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .day-step-card.active {
+        border-color: var(--accent-cyan);
+        background: rgba(6, 182, 212, 0.04);
+        box-shadow: var(--glow-cyan);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-lg-3 fade-in text-start">
+    
+    <!-- Header Title -->
+    <div class="text-center mb-5" id="studioHeader">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+            🎥 AI Interview Analysis Studio
+        </span>
+        <h1 class="fw-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Analyze Your Interview Presence</h1>
+        <p class="text-muted fs-5">Upload or record your interview response and let AI evaluate your communication, confidence and professional presence.</p>
+    </div>
+
+    <!-- ERROR ALERT CONTAINER -->
+    <div id="errorAlertBox" class="alert alert-danger d-none mb-4 border-danger border-opacity-30" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e;">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i><span id="errorAlertMessage"></span>
+    </div>
+
+    <!-- STEP 1 & 2: Upload, Record, and Video Preview Panel -->
+    <div class="studio-panel" id="uploadRecordPanel">
+        <!-- Media Source Selection Dials -->
+        <div class="row g-3 mb-4 justify-content-center" id="sourceSelectorRow">
+            <div class="col-md-5">
+                <div class="option-card p-4 text-center h-100 d-flex flex-column align-items-center justify-content-center" onclick="showUploadView()">
+                    <i class="fa-solid fa-cloud-arrow-up text-cyan-400 fs-1 mb-2"></i>
+                    <h5 class="fw-bold text-white mb-1">📁 UPLOAD VIDEO</h5>
+                    <p class="text-muted small mb-0">Select MP4, WEBM, or MOV response from your desktop</p>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="option-card p-4 text-center h-100 d-flex flex-column align-items-center justify-content-center" onclick="showRecordView()">
+                    <i class="fa-solid fa-circle-dot text-danger fs-1 mb-2 fa-pulse"></i>
+                    <h5 class="fw-bold text-white mb-1">🎥 RECORD VIDEO</h5>
+                    <p class="text-muted small mb-0">Capture a new response directly using your webcam</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPLOAD SOURCE VIEW -->
+        <div id="uploadViewContainer" class="d-none mb-4">
+            <div class="glass-card p-5 text-center mx-auto" style="max-width: 700px; background: var(--bg-secondary);">
+                <div id="dropZone" class="p-5 text-center d-flex flex-column align-items-center justify-content-center" 
+                     style="min-height: 250px; border: 2.5px dashed var(--glass-border); border-radius: 16px; cursor: pointer; transition: all 0.3s ease;"
+                     onclick="document.getElementById('studioFileInput').click()"
+                     ondragover="handleDragOver(event)"
+                     ondragleave="handleDragLeave(event)"
+                     ondrop="handleDrop(event)">
+                    <i class="fa-solid fa-file-video text-cyan-400 fs-1 mb-3"></i>
+                    <h5 class="text-white fw-bold mb-1">Drag & drop your interview video here</h5>
+                    <p class="text-muted small">or <strong class="text-purple-300">Browse from your computer</strong></p>
+                    <span class="text-muted font-monospace" style="font-size: 0.75rem;">Accepts .mp4, .webm, .mov (Max 50 MB)</span>
+                </div>
+                <input type="file" id="studioFileInput" accept="video/mp4,video/webm,video/mov" class="d-none" onchange="handleFileSelect(event)">
+                <div class="text-start mt-3">
+                    <button class="btn btn-sm btn-premium-outline px-3" onclick="resetStudioSource()"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECORD SOURCE VIEW -->
+        <div id="recordViewContainer" class="d-none mb-4">
+            <div class="glass-card p-4 text-center mx-auto border-indigo" style="max-width: 700px; background: var(--bg-secondary);">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-video text-danger me-2"></i>Live Webcam Recorder</h5>
+                
+                <div class="w-100 rounded-3 overflow-hidden border border-secondary border-opacity-10 position-relative d-flex align-items-center justify-content-center bg-black mb-3 mx-auto" style="aspect-ratio: 16/9; max-width: 500px;">
+                    <video id="webcamPreview" class="w-100 h-100" autoplay muted playsinline></video>
+                    <div class="position-absolute top-0 start-0 m-3 bg-dark bg-opacity-75 text-danger px-3 py-1 rounded small font-monospace d-none border border-danger border-opacity-25" id="recordingIndicator">
+                        <i class="fa-solid fa-circle text-danger fa-beat me-1"></i>Recording <span id="recordingTimer">00:00</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <button class="btn btn-premium-cyan py-2 px-4 text-uppercase fw-bold" id="startRecBtn" onclick="startWebcamRecording()">START RECORDING</button>
+                    <button class="btn btn-warning py-2 px-4 text-uppercase text-white fw-bold d-none" id="pauseRecBtn" onclick="pauseWebcamRecording()">PAUSE</button>
+                    <button class="btn btn-danger py-2 px-4 text-uppercase fw-bold d-none" id="stopRecBtn" onclick="stopWebcamRecording()">STOP</button>
+                </div>
+
+                <div class="text-start">
+                    <button class="btn btn-sm btn-premium-outline px-3" id="backRecordBtn" onclick="resetStudioSource()"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIDEO PREVIEW PLAYER VIEW -->
+        <div id="previewViewContainer" class="d-none mb-4">
+            <div class="glass-card p-4 text-center mx-auto" style="max-width: 700px; background: var(--bg-secondary);">
+                <div class="p-3 rounded border border-success border-opacity-20 mb-3 text-start" style="background: rgba(16, 185, 129, 0.08);">
+                    <div class="d-flex align-items-center text-success mb-2 small fw-bold">
+                        <i class="fa-solid fa-circle-check me-2"></i>✓ Video selected
+                    </div>
+                    <div class="text-white small font-monospace mb-1"><strong>File name:</strong> <span id="previewFileName">interview_response.mp4</span></div>
+                    <div class="text-muted small font-monospace mb-1"><strong>File size:</strong> <span id="previewFileSize">12.4 MB</span></div>
+                    <div class="text-muted small font-monospace"><strong>Duration:</strong> <span id="previewFileDuration">01:24</span></div>
+                </div>
+
+                <div class="w-100 rounded-3 overflow-hidden border border-secondary border-opacity-10 bg-black mb-3 mx-auto" style="aspect-ratio: 16/9; max-width: 500px;">
+                    <video id="previewVideoPlayer" class="w-100 h-100" controls></video>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <button class="btn btn-premium-outline py-3 px-4 text-uppercase fw-bold" id="changeMediaBtn" onclick="resetStudioSource()">CHANGE VIDEO</button>
+                    <button class="btn btn-premium py-3 px-4 text-uppercase fw-bold" id="triggerScanBtn" onclick="runStudioScanning()">ANALYZE WITH AI</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 3: Animated AI Scanning Overlay -->
+    <div class="studio-panel d-none" id="scanningPanel">
+        <div class="glass-card p-5 text-center border-indigo mx-auto" style="max-width: 700px; background: var(--bg-secondary);">
+            <div class="d-inline-block p-4 rounded-circle mb-4" style="background: rgba(6, 182, 212, 0.1); border: 1.5px solid rgba(6, 182, 212, 0.25);">
+                <i class="fa-solid fa-wand-magic-sparkles text-cyan-400 fs-1 fa-bounce"></i>
+            </div>
+            
+            <h2 class="fw-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">AI ANALYSIS STARTED</h2>
+            <p class="text-muted small mb-4">Our engine is parsing audio levels, gaze framing matrices, and vocabulary structures.</p>
+
+            <div class="progress mb-4 mx-auto" style="height: 12px; max-width: 500px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                <div class="progress-bar bg-purple-500 progress-bar-striped progress-bar-animated" id="scanMainProgressBar" style="width: 0%; background: var(--accent-purple) !important;"></div>
+            </div>
+            <div class="text-cyan-400 fw-bold font-monospace mb-4" id="progressPercentageText">0%</div>
+
+            <!-- Steps lists -->
+            <div class="d-flex flex-column gap-2 mx-auto text-start p-4 rounded-4" style="background: var(--card-bg); max-width: 500px; border: 1.5px solid var(--glass-border);">
+                <div class="scan-step" id="scanStep1"><i class="fa-solid fa-circle-notch fa-spin me-2"></i>Uploading video...</div>
+                <div class="scan-step" id="scanStep2"><i class="fa-solid fa-circle-notch me-2"></i>Processing video...</div>
+                <div class="scan-step" id="scanStep3"><i class="fa-solid fa-circle-notch me-2"></i>Extracting audio...</div>
+                <div class="scan-step" id="scanStep4"><i class="fa-solid fa-circle-notch me-2"></i>Converting speech to text...</div>
+                <div class="scan-step" id="scanStep5"><i class="fa-solid fa-circle-notch me-2"></i>Detecting filler words...</div>
+                <div class="scan-step" id="scanStep6"><i class="fa-solid fa-circle-notch me-2"></i>Analyzing speech speed...</div>
+                <div class="scan-step" id="scanStep7"><i class="fa-solid fa-circle-notch me-2"></i>Evaluating confidence...</div>
+                <div class="scan-step" id="scanStep8"><i class="fa-solid fa-circle-notch me-2"></i>Analyzing facial expressions...</div>
+                <div class="scan-step" id="scanStep9"><i class="fa-solid fa-circle-notch me-2"></i>Analyzing eye contact...</div>
+                <div class="scan-step" id="scanStep10"><i class="fa-solid fa-circle-notch me-2"></i>Analyzing body language...</div>
+                <div class="scan-step" id="scanStep11"><i class="fa-solid fa-circle-notch me-2"></i>Generating recruiter feedback...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEPS 4 - 9: Results Dashboard (Revealed after scan animation) -->
+    <div class="studio-panel d-none" id="resultsPanel">
+        
+        <!-- Video Player showing uploaded response -->
+        <div class="glass-card p-4 mb-5 text-center" style="background: var(--bg-secondary);">
+            <h5 class="fw-bold text-white text-start mb-3"><i class="fa-solid fa-play text-cyan-400 me-2"></i>Analyzed Video Response</h5>
+            <div class="mx-auto rounded-3 overflow-hidden border border-secondary border-opacity-10 bg-black" style="max-width: 600px; aspect-ratio: 16/9;">
+                <video id="resultsVideoPlayer" class="w-100 h-100" controls></video>
+            </div>
+        </div>
+
+        <!-- Score Circular Gauge section -->
+        <div class="row g-4 align-items-stretch mb-5">
+            <!-- Left circular dial -->
+            <div class="col-lg-5">
+                <div class="glass-card p-5 text-center h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-bold text-muted font-monospace uppercase mb-4" style="font-size: 0.85rem;">INTERVIEW PERFORMANCE REPORT</h5>
+                        
+                        <div class="result-gauge-circle mb-4">
+                            <svg width="150" height="150" viewBox="0 0 150 150">
+                                <defs>
+                                    <linearGradient id="studioResultGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#a855f7" />
+                                        <stop offset="100%" stop-color="#06b6d4" />
+                                    </linearGradient>
+                                </defs>
+                                <circle class="result-gauge-bg" cx="75" cy="75" r="70"></circle>
+                                <circle class="result-gauge-bar" id="resultCircleBar" cx="75" cy="75" r="70"></circle>
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <h1 class="display-6 fw-extrabold text-white mb-0" id="resultsOverallScore" style="font-family: 'Space Grotesk', sans-serif;">88</h1>
+                                <small class="text-muted font-monospace" style="font-size: 0.75rem;">/ 100</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metrics check list -->
+                    <div class="mt-4 pt-4 border-top border-secondary border-opacity-10 text-start">
+                        <div class="row g-3">
+                            <div class="col-4 text-center">
+                                <div class="progress-ring-box mx-auto mb-2">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"></circle>
+                                        <circle class="progress-ring-bar" cx="40" cy="40" r="35" stroke="#06b6d4" style="stroke-dashoffset: 19.8;"></circle> <!-- 91% -> offset 19.8 -->
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold text-white small" style="font-size: 0.8rem;">91%</div>
+                                </div>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Confidence</span>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="progress-ring-box mx-auto mb-2">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"></circle>
+                                        <circle class="progress-ring-bar" cx="40" cy="40" r="35" stroke="#a855f7" style="stroke-dashoffset: 26.4;"></circle> <!-- 88% -> offset 26.4 -->
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold text-white small" style="font-size: 0.8rem;">88%</div>
+                                </div>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Communication</span>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="progress-ring-box mx-auto mb-2">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"></circle>
+                                        <circle class="progress-ring-bar" cx="40" cy="40" r="35" stroke="#06b6d4" style="stroke-dashoffset: 17.6;"></circle> <!-- 92% -> offset 17.6 -->
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold text-white small" style="font-size: 0.8rem;">92%</div>
+                                </div>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Clarity</span>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="progress-ring-box mx-auto mb-2">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"></circle>
+                                        <circle class="progress-ring-bar" cx="40" cy="40" r="35" stroke="#a855f7" style="stroke-dashoffset: 22;"></circle> <!-- 90% -> offset 22 -->
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold text-white small" style="font-size: 0.8rem;">90%</div>
+                                </div>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Professional</span>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="progress-ring-box mx-auto mb-2">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"></circle>
+                                        <circle class="progress-ring-bar" cx="40" cy="40" r="35" stroke="#06b6d4" style="stroke-dashoffset: 35.2;"></circle> <!-- 84% -> offset 35.2 -->
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold text-white small" style="font-size: 0.8rem;">84%</div>
+                                </div>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Body Language</span>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="progress-ring-box mx-auto mb-2">
+                                    <svg width="80" height="80" viewBox="0 0 80 80">
+                                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"></circle>
+                                        <circle class="progress-ring-bar" cx="40" cy="40" r="35" stroke="#a855f7" style="stroke-dashoffset: 28.6;"></circle> <!-- 87% -> offset 28.6 -->
+                                    </svg>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold text-white small" style="font-size: 0.8rem;">87%</div>
+                                </div>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Response Quality</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recruiter Evaluation Board -->
+            <div class="col-lg-7">
+                <div class="glass-card p-5 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+                            <div>
+                                <h4 class="fw-bold text-white mb-0" style="font-family: 'Space Grotesk', sans-serif;">Recruiter's Evaluation</h4>
+                                <small class="text-muted font-monospace fs-9">Professional Interview Assessment</small>
+                            </div>
+                            <span class="badge bg-success-950 text-success border border-success-500 py-2 px-3 fs-8">STRONG CANDIDATE</span>
+                        </div>
+
+                        <!-- Observation -->
+                        <div class="mb-4">
+                            <small class="text-muted d-block font-monospace mb-2">RECRUITER'S OBSERVATION</small>
+                            <p class="text-muted small mb-0 leading-relaxed">
+                                "The candidate communicated ideas clearly and maintained a professional tone throughout the interview. Confidence was strong, although a few hesitation pauses reduced the impact of the response."
+                            </p>
+                        </div>
+
+                        <!-- Strengths and Improvements lists -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-sm-6">
+                                <small class="text-success d-block font-monospace mb-2">STRENGTHS</small>
+                                <ul class="list-unstyled text-muted small d-flex flex-column gap-2 mb-0">
+                                    <li><span class="text-success fw-bold me-1">✓</span> Confident introduction</li>
+                                    <li><span class="text-success fw-bold me-1">✓</span> Clear communication</li>
+                                    <li><span class="text-success fw-bold me-1">✓</span> Professional tone</li>
+                                    <li><span class="text-success fw-bold me-1">✓</span> Relevant answers</li>
+                                    <li><span class="text-success fw-bold me-1">✓</span> Positive attitude</li>
+                                </ul>
+                            </div>
+                            <div class="col-sm-6">
+                                <small class="text-danger d-block font-monospace mb-2">AREAS TO IMPROVE</small>
+                                <ul class="list-unstyled text-muted small d-flex flex-column gap-2 mb-0">
+                                    <li><span class="text-danger fw-bold me-1">⚠</span> Reduce filler words</li>
+                                    <li><span class="text-danger fw-bold me-1">⚠</span> Improve eye contact</li>
+                                    <li><span class="text-danger fw-bold me-1">⚠</span> Provide more specific examples</li>
+                                    <li><span class="text-danger fw-bold me-1">⚠</span> Structure behavioral answers more clearly</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Tip -->
+                        <div class="p-3 rounded-4" style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.25);">
+                            <small class="text-purple-300 d-block font-monospace fw-bold mb-1"><i class="fa-solid fa-lightbulb me-2 text-warning"></i>RECRUITER TIP</small>
+                            <p class="text-muted small mb-0" style="line-height: 1.5;">
+                                "Use the STAR method when answering behavioral questions. Support your answers with specific examples from projects, internships or academic experiences."
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-4 border-top border-secondary border-opacity-10 mt-4">
+                        <div>
+                            <small class="text-muted font-monospace d-block fs-9">FINAL RECOMMENDATION</small>
+                            <strong class="text-success">"Recommended for the next interview round."</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Segment Analysis -->
+        <div class="glass-card p-5 mb-5">
+            <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                <i class="fa-solid fa-timeline text-cyan-400 me-2"></i>INTERVIEW ANALYSIS TIMELINE
+            </h5>
+            
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="d-flex flex-column gap-2" id="timelineMenu">
+                        <div class="timeline-bar-item p-3 active" onclick="showTimelineSegment(0)">
+                            <span class="d-block fw-bold text-white small">00:00 Introduction</span>
+                        </div>
+                        <div class="timeline-bar-item p-3" onclick="showTimelineSegment(1)">
+                            <span class="d-block fw-bold text-white small">00:18 Self Introduction</span>
+                        </div>
+                        <div class="timeline-bar-item p-3" onclick="showTimelineSegment(2)">
+                            <span class="d-block fw-bold text-white small">00:42 Technical Response</span>
+                        </div>
+                        <div class="timeline-bar-item p-3" onclick="showTimelineSegment(3)">
+                            <span class="d-block fw-bold text-white small">01:15 Behavioral Response</span>
+                        </div>
+                        <div class="timeline-bar-item p-3" onclick="showTimelineSegment(4)">
+                            <span class="d-block fw-bold text-white small">01:50 Closing</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-9">
+                    <div class="p-4 rounded-4 h-100 border border-secondary border-opacity-10" style="background: var(--elevated-bg);" id="timelineFeedbackBox">
+                        <h6 class="fw-bold text-white mb-2" id="segmentTitle">Introduction (00:00)</h6>
+                        <p class="text-muted small leading-relaxed" id="segmentText">
+                            "The candidate greeted the board clearly with positive language. Tone and volume levels were stable."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Speech intelligence and waveform -->
+        <div class="glass-card p-5 mb-5">
+            <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                <i class="fa-solid fa-waveform text-purple-400 me-2"></i>SPEECH INTELLIGENCE
+            </h5>
+
+            <div class="row g-4 align-items-center mb-4">
+                <div class="col-md-6 text-start">
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-content-between font-monospace border-bottom border-secondary border-opacity-10 pb-2 text-muted small">
+                            <span>Speaking Speed:</span> <strong class="text-white">142 WPM (Ideal: 120-160 WPM)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between font-monospace border-bottom border-secondary border-opacity-10 pb-2 text-muted small">
+                            <span>Filler Words:</span> <strong class="text-danger">7 words</strong>
+                        </div>
+                        <div class="d-flex justify-content-between font-monospace border-bottom border-secondary border-opacity-10 pb-2 text-muted small">
+                            <span>Average Pause:</span> <strong class="text-white">1.4 sec</strong>
+                        </div>
+                        <div class="d-flex justify-content-between font-monospace border-bottom border-secondary border-opacity-10 pb-2 text-muted small">
+                            <span>Voice Clarity:</span> <strong class="text-cyan-400">92%</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Waveform visual -->
+                <div class="col-md-6">
+                    <div class="p-4 rounded-4 border border-secondary border-opacity-10 text-center" style="background: var(--elevated-bg);">
+                        <small class="text-muted d-block font-monospace mb-3">Live Speech wave</small>
+                        <div class="d-flex justify-content-center align-items-center gap-1" style="height: 60px;">
+                            <div class="waveform-bar" style="height: 12px;"></div>
+                            <div class="waveform-bar" style="height: 25px;"></div>
+                            <div class="waveform-bar" style="height: 45px;"></div>
+                            <div class="waveform-bar filler" style="height: 20px;"></div> <!-- Highlighted filler -->
+                            <div class="waveform-bar" style="height: 35px;"></div>
+                            <div class="waveform-bar" style="height: 15px;"></div>
+                            <div class="waveform-bar" style="height: 50px;"></div>
+                            <div class="waveform-bar filler" style="height: 18px;"></div> <!-- Highlighted filler -->
+                            <div class="waveform-bar" style="height: 25px;"></div>
+                            <div class="waveform-bar" style="height: 40px;"></div>
+                            <div class="waveform-bar" style="height: 10px;"></div>
+                        </div>
+                        <div class="mt-3 small font-monospace text-muted">
+                            Red bars indicate filler word spikes: <span class="badge bg-danger bg-opacity-25 text-danger font-monospace">"um"</span> <span class="badge bg-danger bg-opacity-25 text-danger font-monospace">"actually"</span> <span class="badge bg-danger bg-opacity-25 text-danger font-monospace">"like"</span> <span class="badge bg-danger bg-opacity-25 text-danger font-monospace">"basically"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Improvement plan Day 1 - 7 -->
+        <div class="glass-card p-5 mb-5">
+            <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                <i class="fa-solid fa-list-check text-cyan-400 me-2"></i>Your Interview Improvement Plan
+            </h5>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md col-6">
+                    <div class="day-step-card p-3 text-center active" id="dayCard1">
+                        <span class="d-block fw-bold text-cyan-400 font-monospace small">DAY 1</span>
+                        <small class="text-white">Practice self-introduction</small>
+                    </div>
+                </div>
+                <div class="col-md col-6">
+                    <div class="day-step-card p-3 text-center" id="dayCard2">
+                        <span class="d-block fw-bold text-muted font-monospace small">DAY 2</span>
+                        <small class="text-muted">Practice STAR method</small>
+                    </div>
+                </div>
+                <div class="col-md col-6">
+                    <div class="day-step-card p-3 text-center" id="dayCard3">
+                        <span class="d-block fw-bold text-muted font-monospace small">DAY 3</span>
+                        <small class="text-muted">Technical prep</small>
+                    </div>
+                </div>
+                <div class="col-md col-6">
+                    <div class="day-step-card p-3 text-center" id="dayCard4">
+                        <span class="d-block fw-bold text-muted font-monospace small">DAY 4</span>
+                        <small class="text-muted">Reduce filler words</small>
+                    </div>
+                </div>
+                <div class="col-md col-6">
+                    <div class="day-step-card p-3 text-center" id="dayCard5">
+                        <span class="d-block fw-bold text-muted font-monospace small">DAY 5</span>
+                        <small class="text-muted">Practice eye contact</small>
+                    </div>
+                </div>
+                <div class="col-md col-6">
+                    <div class="day-step-card p-3 text-center" id="dayCard6">
+                        <span class="d-block fw-bold text-muted font-monospace small">DAY 6</span>
+                        <small class="text-muted">Mock interview</small>
+                    </div>
+                </div>
+                <div class="col-md col-6">
+                    <div class="day-step-card p-3 text-center" id="dayCard7">
+                        <span class="d-block fw-bold text-muted font-monospace small">DAY 7</span>
+                        <small class="text-muted">Final AI test</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button class="btn btn-premium py-2 px-5 text-uppercase fw-bold" id="dayActionBtn" onclick="runDayExercise(1)">
+                    START DAY 1
+                </button>
+            </div>
+        </div>
+
+        <!-- Try again & score comparison -->
+        <div class="glass-card p-5 text-center border-indigo">
+            <h4 class="fw-bold text-white mb-2">Ready to improve your score?</h4>
+            <p class="text-muted small mb-4">Complete another mock loop to compare ratings and check progress.</p>
+            
+            <div class="row justify-content-center g-3 mb-4 font-monospace">
+                <div class="col-auto">
+                    <div class="py-2 px-4 rounded border border-secondary border-opacity-10 text-muted" style="background: var(--elevated-bg);">
+                        Previous Score: <strong class="text-white">72</strong>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="py-2 px-4 rounded border border-secondary border-opacity-10 text-muted" style="background: var(--elevated-bg);">
+                        Current Score: <strong class="text-white" id="resultsCompareScore">88</strong>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="py-2 px-4 rounded bg-success-950 bg-opacity-10 border border-success-500 border-opacity-30 text-success">
+                        Improvement: <strong class="text-success" id="resultsImprovement">+16 points</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{% url 'ai_interview' %}" class="btn btn-premium py-3 px-4 text-decoration-none">TRY INTERVIEW AGAIN</a>
+                <a href="{% url 'ai_interview' %}" class="btn btn-premium-outline py-3 px-4 text-decoration-none">VIEW PERFORMANCE HISTORY</a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let studioFile = null;
+    let webcamStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recTimerInterval = null;
+    let recordStartTime = null;
+    let isWebcamMode = false;
+
+    function showUploadView() {
+        resetStudioSource();
+        isWebcamMode = false;
+        document.getElementById("sourceSelectorRow").classList.add("d-none");
+        document.getElementById("uploadViewContainer").classList.remove("d-none");
+    }
+
+    function showRecordView() {
+        resetStudioSource();
+        isWebcamMode = true;
+        document.getElementById("sourceSelectorRow").classList.add("d-none");
+        document.getElementById("recordViewContainer").classList.remove("d-none");
+        
+        // Request webcam permission early for live feedback
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+                .then(stream => {
+                    webcamStream = stream;
+                    const preview = document.getElementById("webcamPreview");
+                    preview.srcObject = stream;
+                })
+                .catch(err => {
+                    showError("Unable to access camera and microphone. Please check system permissions.");
+                });
+        } else {
+            showError("Webcam recording is not supported by your browser.");
+        }
+    }
+
+    // Drag and Drop Handling
+    function handleDragOver(e) {
+        e.preventDefault();
+        document.getElementById("dropZone").style.borderColor = "var(--accent-cyan)";
+        document.getElementById("dropZone").style.background = "rgba(6, 182, 212, 0.05)";
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        document.getElementById("dropZone").style.borderColor = "var(--glass-border)";
+        document.getElementById("dropZone").style.background = "transparent";
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        handleDragLeave(e);
+        const file = e.dataTransfer.files[0];
+        validateAndSetFile(file);
+    }
+
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        validateAndSetFile(file);
+    }
+
+    function validateAndSetFile(file) {
+        if (!file) return;
+        
+        hideError();
+        
+        // Validate format
+        const extension = file.name.split('.').pop().toLowerCase();
+        const allowedExtensions = ['mp4', 'webm', 'mov'];
+        if (!allowedExtensions.includes(extension)) {
+            showError("Invalid file format. Please upload an MP4, WEBM, or MOV video.");
+            return;
+        }
+
+        // Validate size (50 MB max)
+        const sizeMb = file.size / (1024 * 1024);
+        if (sizeMb > 50) {
+            showError("Video is larger than 50 MB. Please upload a smaller file.");
+            return;
+        }
+
+        studioFile = file;
+
+        // Set metadata and preview
+        document.getElementById("previewFileName").innerText = file.name;
+        document.getElementById("previewFileSize").innerText = `${sizeMb.toFixed(1)} MB`;
+        
+        // Create URL and retrieve duration
+        const videoUrl = URL.createObjectURL(file);
+        const videoElement = document.createElement("video");
+        videoElement.src = videoUrl;
+        
+        videoElement.onloadedmetadata = function() {
+            const durationSec = Math.round(videoElement.duration);
+            const mins = Math.floor(durationSec / 60).toString().padStart(2, '0');
+            const secs = (durationSec % 60).toString().padStart(2, '0');
+            document.getElementById("previewFileDuration").innerText = `${mins}:${secs}`;
+            
+            // Set source of preview player
+            const player = document.getElementById("previewVideoPlayer");
+            player.src = videoUrl;
+            
+            // Toggle container states
+            document.getElementById("uploadViewContainer").classList.add("d-none");
+            document.getElementById("recordViewContainer").classList.add("d-none");
+            document.getElementById("previewViewContainer").classList.remove("d-none");
+            document.getElementById("changeMediaBtn").innerText = "CHANGE VIDEO";
+        };
+    }
+
+    // MediaRecorder API Webcam Recording
+    function startWebcamRecording() {
+        if (!webcamStream) {
+            showError("Camera feed is not active. Please refresh permission.");
+            return;
+        }
+
+        recordedChunks = [];
+        try {
+            mediaRecorder = new MediaRecorder(webcamStream, { mimeType: 'video/webm' });
+        } catch (e) {
+            try {
+                mediaRecorder = new MediaRecorder(webcamStream, { mimeType: 'video/mp4' });
+            } catch (e2) {
+                showError("Your browser does not support compatible video encoding.");
+                return;
+            }
+        }
+
+        mediaRecorder.ondataavailable = function(e) {
+            if (e.data && e.data.size > 0) {
+                recordedChunks.push(e.data);
+            }
+        };
+
+        mediaRecorder.onstop = function() {
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+            const extension = mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+            const file = new File([blob], `recorded_response.${extension}`, { type: blob.type });
+            validateAndSetFile(file);
+            document.getElementById("changeMediaBtn").innerText = "RECORD AGAIN";
+        };
+
+        // Start recording
+        mediaRecorder.start();
+        recordStartTime = Date.now();
+        
+        // Toggle Indicators
+        document.getElementById("recordingIndicator").classList.remove("d-none");
+        document.getElementById("startRecBtn").classList.add("d-none");
+        document.getElementById("backRecordBtn").classList.add("d-none");
+        document.getElementById("pauseRecBtn").classList.remove("d-none");
+        document.getElementById("stopRecBtn").classList.remove("d-none");
+
+        // Timer interval
+        recTimerInterval = setInterval(updateRecordTimer, 1000);
+    }
+
+    function updateRecordTimer() {
+        const delta = Math.floor((Date.now() - recordStartTime) / 1000);
+        const mins = Math.floor(delta / 60).toString().padStart(2, '0');
+        const secs = (delta % 60).toString().padStart(2, '0');
+        document.getElementById("recordingTimer").innerText = `${mins}:${secs}`;
+    }
+
+    function pauseWebcamRecording() {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.pause();
+            document.getElementById("pauseRecBtn").innerText = "RESUME";
+        } else if (mediaRecorder && mediaRecorder.state === "paused") {
+            mediaRecorder.resume();
+            document.getElementById("pauseRecBtn").innerText = "PAUSE";
+        }
+    }
+
+    function stopWebcamRecording() {
+        if (mediaRecorder && (mediaRecorder.state === "recording" || mediaRecorder.state === "paused")) {
+            mediaRecorder.stop();
+        }
+        
+        clearInterval(recTimerInterval);
+        document.getElementById("recordingIndicator").classList.add("d-none");
+        document.getElementById("startRecBtn").classList.remove("d-none");
+        document.getElementById("backRecordBtn").classList.remove("d-none");
+        document.getElementById("pauseRecBtn").classList.add("d-none");
+        document.getElementById("stopRecBtn").classList.add("d-none");
+
+        // Clean up tracks
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream = null;
+        }
+    }
+
+    // Reset View State
+    function resetStudioSource() {
+        studioFile = null;
+        
+        // Stop any running camera streams
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream = null;
+        }
+        if (recTimerInterval) {
+            clearInterval(recTimerInterval);
+        }
+
+        // Reset elements
+        document.getElementById("previewVideoPlayer").src = "";
+        document.getElementById("webcamPreview").srcObject = null;
+
+        // Reset Views
+        document.getElementById("uploadViewContainer").classList.add("d-none");
+        document.getElementById("recordViewContainer").classList.add("d-none");
+        document.getElementById("previewViewContainer").classList.add("d-none");
+        document.getElementById("sourceSelectorRow").classList.remove("d-none");
+        hideError();
+    }
+
+    // Dynamic error handling
+    function showError(msg) {
+        document.getElementById("errorAlertMessage").innerText = msg;
+        document.getElementById("errorAlertBox").classList.remove("d-none");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function hideError() {
+        document.getElementById("errorAlertBox").classList.add("d-none");
+    }
+
+    // AJAX Upload and Animated scanning flow
+    function runStudioScanning() {
+        if (!studioFile) {
+            showError("No video file selected or recorded.");
+            return;
+        }
+
+        // Validate final checklist availability
+        if (studioFile.size === 0) {
+            showError("The video file is empty.");
+            return;
+        }
+
+        // Hide config, reveal scan
+        document.getElementById("uploadRecordPanel").classList.add("d-none");
+        document.getElementById("studioHeader").classList.add("d-none");
+        document.getElementById("scanningPanel").classList.remove("d-none");
+
+        const steps = [
+            "scanStep1", "scanStep2", "scanStep3", "scanStep4", "scanStep5", 
+            "scanStep6", "scanStep7", "scanStep8", "scanStep9", "scanStep10", "scanStep11"
+        ];
+        
+        let idx = 0;
+        let animComplete = false;
+        let responsePayload = null;
+        const mainBar = document.getElementById("scanMainProgressBar");
+        const percentageText = document.getElementById("progressPercentageText");
+
+        // Prepare Django Upload Form payload
+        const formData = new FormData();
+        formData.append("video_file", studioFile);
+        formData.append("duration", document.getElementById("previewFileDuration").innerText);
+
+        // Fetch CSRF Token
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Send POST payload
+        fetch("{% url 'video_analysis' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-CSRFToken": csrftoken
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                responsePayload = data;
+            } else {
+                showError(data.message || "Failed to process video upload.");
+                resetStudioSource();
+                document.getElementById("scanningPanel").classList.add("d-none");
+                document.getElementById("uploadRecordPanel").classList.remove("d-none");
+                document.getElementById("studioHeader").classList.remove("d-none");
+            }
+        })
+        .catch(err => {
+            showError("An error occurred during video upload. Please try again.");
+            resetStudioSource();
+            document.getElementById("scanningPanel").classList.add("d-none");
+            document.getElementById("uploadRecordPanel").classList.remove("d-none");
+            document.getElementById("studioHeader").classList.remove("d-none");
+        });
+
+        function processSteps() {
+            if (idx > 0) {
+                const prev = document.getElementById(steps[idx - 1]);
+                prev.classList.remove("active");
+                prev.classList.add("complete");
+                prev.querySelector("i").className = "fa-solid fa-circle-check text-cyan-400 me-2";
+            }
+            
+            if (idx < steps.length) {
+                const cur = document.getElementById(steps[idx]);
+                cur.classList.add("active");
+                cur.querySelector("i").className = "fa-solid fa-circle-notch fa-spin text-cyan-400 me-2";
+                
+                const percent = Math.round(((idx + 1) / steps.length) * 100);
+                mainBar.style.width = `${percent}%`;
+                percentageText.innerText = `${percent}%`;
+                idx++;
+                setTimeout(processSteps, 400);
+            } else {
+                animComplete = true;
+                checkTransition();
+            }
+        }
+
+        function checkTransition() {
+            if (animComplete && responsePayload) {
+                // Completed! Hide scanning and show results dashboard
+                document.getElementById("scanningPanel").classList.add("d-none");
+                
+                // Populate results player and scores
+                document.getElementById("resultsVideoPlayer").src = responsePayload.video_url;
+                document.getElementById("resultsOverallScore").innerText = responsePayload.overall_score;
+                document.getElementById("resultsCompareScore").innerText = responsePayload.overall_score;
+                
+                // Adjust score compare diff
+                const diff = responsePayload.overall_score - 72;
+                document.getElementById("resultsImprovement").innerText = `${diff >= 0 ? '+' : ''}${diff} points`;
+
+                // Update circular SVG gauge animation parameters
+                const progressOffset = 440 - (440 * responsePayload.overall_score) / 100;
+                document.getElementById("resultCircleBar").style.strokeDashoffset = progressOffset;
+
+                document.getElementById("resultsPanel").classList.remove("d-none");
+            } else {
+                // Polling wait
+                setTimeout(checkTransition, 200);
+            }
+        }
+
+        processSteps();
+    }
+
+    // Timeline feedback click events
+    const timelineData = [
+        {
+            title: "Introduction (00:00)",
+            text: "\"The candidate greeted the board clearly with positive language. Tone and volume levels were stable.\""
+        },
+        {
+            title: "Self Introduction (00:18)",
+            text: "\"Excellent breakdown of programming experience. Speed was slightly rapid, but the structure stayed intact.\""
+        },
+        {
+            title: "Technical Response (00:42)",
+            text: "\"Accurately explained conceptual OOPS abstraction pillars. Good selection of engineering examples.\""
+        },
+        {
+            title: "Behavioral Response (01:15)",
+            text: "\"Followed the STAR method cleanly. Highlighted collaboration metrics but missed detail on a target framework.\""
+        },
+        {
+            title: "Closing (01:50)",
+            text: "\"Polite and professional departure. Strong confidence impression maintained.\""
+        }
+    ];
+
+    function showTimelineSegment(index) {
+        const items = document.querySelectorAll(".timeline-bar-item");
+        items.forEach(el => el.classList.remove("active"));
+        items[index].classList.add("active");
+
+        document.getElementById("segmentTitle").innerText = timelineData[index].title;
+        document.getElementById("segmentText").innerText = timelineData[index].text;
+    }
+
+    // Day planner triggers
+    function runDayExercise(dayNumber) {
+        // Toggle selected day layout highlights
+        for(let d=1; d<=7; d++) {
+            const card = document.getElementById(`dayCard${d}`);
+            if (card) {
+                if (d === dayNumber + 1) {
+                    card.classList.add("active");
+                    card.querySelector("span").className = "d-block fw-bold text-cyan-400 font-monospace small";
+                    card.querySelector("small").className = "text-white";
+                } else if (d === dayNumber) {
+                    card.classList.remove("active");
+                    card.querySelector("span").className = "d-block fw-bold text-success font-monospace small";
+                    card.querySelector("span").innerText = "✓ DONE";
+                    card.querySelector("small").className = "text-muted";
+                } else {
+                    card.classList.remove("active");
+                }
+            }
+        }
+        
+        // Update button
+        const nextDay = dayNumber + 1;
+        if (nextDay <= 7) {
+            document.getElementById("dayActionBtn").innerText = `START DAY ${nextDay}`;
+            document.getElementById("dayActionBtn").setAttribute("onclick", `runDayExercise(${nextDay})`);
+        } else {
+            document.getElementById("dayActionBtn").innerText = "PLAN COMPLETED! RETAKE MOCK";
+            document.getElementById("dayActionBtn").setAttribute("onclick", "window.location.href='/interview/select-interview/'");
+        }
+    }
+</script>
+{% endblock %}

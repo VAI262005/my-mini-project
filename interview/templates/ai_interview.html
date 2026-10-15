@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Interview Studio - AI Interview Performance Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-image: linear-gradient(135deg, rgba(240, 244, 250, 0.92) 0%, rgba(248, 250, 252, 0.96) 100%), url('/static/images/student-interview.jpg') !important;
+        background-attachment: fixed !important;
+        background-position: center !important;
+        background-size: cover !important;
+        background-repeat: no-repeat !important;
+    }
+    /* Glowing Avatar Card */
+    .avatar-panel {
+        background: radial-gradient(circle at 50% 50%, rgba(109, 40, 217, 0.08) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px dashed rgba(168, 85, 247, 0.25);
+        border-radius: 20px;
+        min-height: 420px;
+    }
+    .avatar-orb {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #a855f7 0%, #7c3aed 50%, #06b6d4 100%);
+        box-shadow: 0 0 40px rgba(168, 85, 247, 0.4);
+        margin: 0 auto 30px;
+        animation: avatarPulse 4s infinite alternate;
+        position: relative;
+        z-index: 1;
+    }
+    .avatar-orb::after {
+        content: '';
+        position: absolute;
+        top: -10px; left: -10px; right: -10px; bottom: -10px;
+        border: 1.5px solid rgba(6, 182, 212, 0.25);
+        border-radius: 50%;
+        animation: orbRotate 12s linear infinite;
+    }
+    @keyframes avatarPulse {
+        0% { transform: scale(1); filter: brightness(0.95) drop-shadow(0 0 20px rgba(168, 85, 247, 0.3)); }
+        100% { transform: scale(1.05); filter: brightness(1.1) drop-shadow(0 0 40px rgba(168, 85, 247, 0.6)); }
+    }
+    @keyframes orbRotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .form-label-premium {
+        font-family: 'Space Grotesk', sans-serif;
+        color: var(--text-main);
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .setup-console {
+        border-radius: 20px;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-lg-3 fade-in">
+
+    <!-- Top Header -->
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.3); color: var(--accent-purple);">
+            🤖 Virtual Interview Studio
+        </span>
+        <h1 class="fw-bold text-main mb-2" style="font-family: 'Space Grotesk', sans-serif;">AI Interview Studio</h1>
+        <p class="text-muted fs-5">Interactive mock interview room with real-time video evaluation and stress handling analysis.</p>
+    </div>
+
+    <!-- Main Setup Grid -->
+    <div class="row g-5 align-items-stretch text-start mb-5">
+        
+        <!-- Left Panel: AI Avatar Greeting -->
+        <div class="col-lg-5">
+            <div class="avatar-panel p-5 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                <div class="avatar-orb"></div>
+                <h3 class="fw-bold text-main mb-2">Hello! I'm your AI Evaluator.</h3>
+                <p class="text-muted small mb-4" style="max-width: 320px;">
+                    Configure your job role, interview type, and difficulty level on the console to activate your simulated placement interview.
+                </p>
+                <div class="p-3 rounded-4 w-100 border border-secondary border-opacity-10 text-start" style="background: var(--elevated-bg);">
+                    <small class="text-purple-600 d-block font-monospace fw-bold mb-1"><i class="fa-solid fa-circle-check me-2 text-success"></i>Evaluation Modules</small>
+                    <ul class="list-unstyled text-muted small mb-0 font-monospace">
+                        <li>• Real-Time Speech & Audio Analysis</li>
+                        <li>• Webcam Feed Alignment</li>
+                        <li>• In-Place Stress Interruption Handling</li>
+                        <li>• Adaptive Follow-Up Questioning</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Setup Console -->
+        <div class="col-lg-7">
+            <div class="glass-card setup-console p-5 h-100">
+                <h3 class="fw-bold text-main mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                    <i class="fa-solid fa-sliders text-purple-400 me-2"></i>Candidate Setup Room
+                </h3>
+                
+                <form id="interviewSetupForm" onsubmit="startSession(event)">
+                    <!-- Target Job Role Selection -->
+                    <div class="mb-4">
+                        <label class="form-label form-label-premium text-uppercase">Select Job Role</label>
+                        <select id="targetRoleSelect" class="form-select form-control-custom" required>
+                            {% for role in job_roles %}
+                                <option value="{{ role }}" {% if role == user_target_role %}selected{% endif %}>{{ role }}</option>
+                            {% empty %}
+                                <option value="Software Developer">Software Developer</option>
+                                <option value="Frontend Developer">Frontend Developer</option>
+                                <option value="Backend Developer">Backend Developer</option>
+                                <option value="Full Stack Developer">Full Stack Developer</option>
+                                <option value="Java Developer">Java Developer</option>
+                                <option value="Python Developer">Python Developer</option>
+                                <option value="Data Analyst">Data Analyst</option>
+                                <option value="Data Scientist">Data Scientist</option>
+                                <option value="Machine Learning Engineer">Machine Learning Engineer</option>
+                                <option value="AI Engineer">AI Engineer</option>
+                                <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
+                                <option value="Database Administrator">Database Administrator</option>
+                                <option value="DevOps Engineer">DevOps Engineer</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Experience Level -->
+                    <div class="mb-4">
+                        <label class="form-label form-label-premium text-uppercase">Experience Level</label>
+                        <select id="experienceLevel" class="form-select form-control-custom">
+                            <option value="entry" selected>Entry Level / Campus Placement</option>
+                            <option value="junior">Junior Developer (1-2 years)</option>
+                            <option value="mid">Mid-level (3-5 years)</option>
+                            <option value="senior">Senior Lead (5+ years)</option>
+                        </select>
+                    </div>
+
+                    <!-- Interview Type / Track -->
+                    <div class="mb-4">
+                        <label class="form-label form-label-premium text-uppercase">Interview Type</label>
+                        <select id="interviewTrack" class="form-select form-control-custom" required>
+                            <option value="job_role_interview" selected>Job-Role Placement Round (General + Technical + HR)</option>
+                            <option value="programming">Programming & Coding Round</option>
+                            <option value="python">Python & Software Engineering</option>
+                            <option value="webdev">Web Development</option>
+                            <option value="db_sql">Databases & SQL</option>
+                            <option value="dsa">Data Structures & Algorithms</option>
+                            <option value="aptitude">Aptitude & Logical Reasoning</option>
+                            <option value="hr">HR Interview</option>
+                            <option value="behavioral">Behavioral Interview</option>
+                            <option value="leadership">Leadership & Communication</option>
+                        </select>
+                    </div>
+
+                    <!-- Difficulty level -->
+                    <div class="mb-5">
+                        <label class="form-label form-label-premium text-uppercase">Difficulty Level</label>
+                        <div class="d-flex gap-3">
+                            <input type="radio" class="btn-check" name="difficulty" id="diffEasy" value="Easy">
+                            <label class="btn btn-premium-outline flex-grow-1" for="diffEasy">Beginner</label>
+                            
+                            <input type="radio" class="btn-check" name="difficulty" id="diffMed" value="Medium" checked>
+                            <label class="btn btn-premium-outline flex-grow-1" for="diffMed">Intermediate</label>
+                            
+                            <input type="radio" class="btn-check" name="difficulty" id="diffHard" value="Hard">
+                            <label class="btn btn-premium-outline flex-grow-1" for="diffHard">Advanced</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-premium w-100 py-3 text-uppercase fw-bold fs-6">
+                        START AI INTERVIEW STREAM <i class="fa-solid fa-arrow-right ms-2"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Past Sessions & Recruiter Evaluation Reports History -->
+    {% if sessions %}
+    <div class="glass-card p-4 text-start fade-in mt-4">
+        <h4 class="fw-bold text-main mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+            <i class="fa-solid fa-clock-rotate-left text-cyan-400 me-2"></i>Recent Recruiter Evaluation Reports
+        </h4>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="color: var(--text-main);">
+                <thead>
+                    <tr class="font-monospace text-muted small border-bottom border-secondary border-opacity-10">
+                        <th>SESSION #</th>
+                        <th>JOB ROLE</th>
+                        <th>INTERVIEW TYPE</th>
+                        <th>DATE</th>
+                        <th>SCORE</th>
+                        <th>REPORT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                    <tr>
+                        <td class="font-monospace fw-bold">#{{ s.id }}</td>
+                        <td><span class="badge bg-purple-100 text-purple-800 border border-purple-300 font-monospace">{{ s.job_role|default:"Software Developer" }}</span></td>
+                        <td class="text-capitalize">{{ s.get_interview_type_display }}</td>
+                        <td class="small text-muted">{{ s.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <span class="badge {% if s.final_score >= 80 %}bg-success{% elif s.final_score >= 65 %}bg-warning text-dark{% else %}bg-danger{% endif %} py-2 px-3 font-monospace fs-8">
+                                {{ s.final_score }}/100
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'report_detail' s.id %}" class="btn btn-sm btn-premium-outline py-1 px-3 fs-8 text-decoration-none">
+                                <i class="fa-solid fa-file-contract me-1"></i>View Report
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function startSession(event) {
+        event.preventDefault();
+        const selectedTrack = document.getElementById('interviewTrack').value;
+        const selectedRole = document.getElementById('targetRoleSelect').value;
+        
+        // Direct route to start_interview_view with job_role parameter
+        window.location.href = `/start/${selectedTrack}/?job_role=${encodeURIComponent(selectedRole)}`;
+    }
+</script>
+{% endblock %}

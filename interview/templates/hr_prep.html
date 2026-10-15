@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}HR Interview Practice - AI Interview Performance Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-lg-3 fade-in text-start">
+    
+    <div class="text-center mb-5">
+        <span class="badge py-2 px-3 mb-2 fs-8 text-uppercase font-monospace" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+            💼 Recruiter Objectives
+        </span>
+        <h1 class="fw-bold text-white mb-2" style="font-family: 'Space Grotesk', sans-serif;">Think Like a Recruiter</h1>
+        <p class="text-muted fs-5">Prepare for behavioral loops by understanding what HR managers scan for during discussions.</p>
+    </div>
+
+    <div class="row g-5 align-items-stretch">
+        
+        <!-- Left: HR Objectives details -->
+        <div class="col-lg-4">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                        <i class="fa-solid fa-crosshairs text-purple-400 me-2"></i>Interview Objectives
+                    </h5>
+                    
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-purple-900 bg-opacity-20 border border-purple-500 border-opacity-35 p-2 text-purple-400"><i class="fa-solid fa-comments"></i></div>
+                            <div>
+                                <span class="d-block fw-bold text-white small">Communication</span>
+                                <small class="text-muted">Vocabulary structures, fluency, and steady pacing.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-cyan-900 bg-opacity-20 border border-cyan-500 border-opacity-35 p-2 text-cyan-400"><i class="fa-solid fa-face-smile"></i></div>
+                            <div>
+                                <span class="d-block fw-bold text-white small">Confidence</span>
+                                <small class="text-muted">Body postures, camera contact focus, and tone.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-purple-900 bg-opacity-20 border border-purple-500 border-opacity-35 p-2 text-purple-400"><i class="fa-solid fa-id-card-clip"></i></div>
+                            <div>
+                                <span class="d-block fw-bold text-white small">Personality</span>
+                                <small class="text-muted">Positive language attributes and structured responses.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-cyan-900 bg-opacity-20 border border-cyan-500 border-opacity-35 p-2 text-cyan-400"><i class="fa-solid fa-users-viewfinder"></i></div>
+                            <div>
+                                <span class="d-block fw-bold text-white small">Culture Fit</span>
+                                <small class="text-muted">Company mission alignment and team-oriented behaviors.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-purple-900 bg-opacity-20 border border-purple-500 border-opacity-35 p-2 text-purple-400"><i class="fa-solid fa-crown"></i></div>
+                            <div>
+                                <span class="d-block fw-bold text-white small">Leadership</span>
+                                <small class="text-muted">Problem-solving ownership and crisis management stories.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <a href="{% url 'start_interview' 'hr' %}" class="btn btn-premium w-100 py-3 text-uppercase fw-bold text-decoration-none">
+                        Start Full HR Round
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Sample Questions & Insights -->
+        <div class="col-lg-8">
+            <div class="glass-card p-4">
+                <h5 class="fw-bold text-white mb-4 border-bottom border-secondary border-opacity-10 pb-2">
+                    <i class="fa-solid fa-circle-question text-cyan-400 me-2"></i>Sample Prompts & Recruiter Insights
+                </h5>
+
+                <div class="accordion accordion-flush d-flex flex-column gap-3" id="hrQuestionsAccordion">
+                    
+                    <!-- Question 1 -->
+                    <div class="accordion-item rounded-3 overflow-hidden border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed bg-transparent text-main fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                1. Tell me about yourself.
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#hrQuestionsAccordion">
+                            <div class="accordion-body text-muted small border-top border-secondary border-opacity-10 p-4">
+                                <p class="mb-2"><strong class="text-main">Why recruiters ask this:</strong> To establish your primary pitch, evaluate your fluency under low structure, and scan for professional highlights.</p>
+                                <p class="mb-3"><strong class="text-main">What recruiters look for:</strong> Clarity, confidence, relevance, and a professional introduction detailing technical stack matches.</p>
+                                <a href="{% url 'start_interview' 'hr' %}" class="btn btn-premium btn-sm py-2 px-4 text-decoration-none">Practice This Question</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="accordion-item rounded-3 overflow-hidden border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed bg-transparent text-main fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                2. Why should we hire you?
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#hrQuestionsAccordion">
+                            <div class="accordion-body text-muted small border-top border-secondary border-opacity-10 p-4">
+                                <p class="mb-2"><strong class="text-main">Why recruiters ask this:</strong> To see if you understand the job requirements and can map your experiences to solve the team's immediate needs.</p>
+                                <p class="mb-3"><strong class="text-main">What recruiters look for:</strong> Custom project matches, unique strengths, and enthusiastic cultural alignment.</p>
+                                <a href="{% url 'start_interview' 'hr' %}" class="btn btn-premium btn-sm py-2 px-4 text-decoration-none">Practice This Question</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="accordion-item rounded-3 overflow-hidden border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed bg-transparent text-main fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                3. What are your strengths?
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#hrQuestionsAccordion">
+                            <div class="accordion-body text-muted small border-top border-secondary border-opacity-10 p-4">
+                                <p class="mb-2"><strong class="text-main">Why recruiters ask this:</strong> To identify if your skills are relevant and how you utilize them in high pressure environments.</p>
+                                <p class="mb-3"><strong class="text-main">What recruiters look for:</strong> Real-world examples of project leadership, collaboration, and learning agility.</p>
+                                <a href="{% url 'start_interview' 'hr' %}" class="btn btn-premium btn-sm py-2 px-4 text-decoration-none">Practice This Question</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 4 -->
+                    <div class="accordion-item rounded-3 overflow-hidden border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                        <h2 class="accordion-header" id="headingFour">
+                            <button class="accordion-button collapsed bg-transparent text-main fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                4. What are your weaknesses?
+                            </button>
+                        </h2>
+                        <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#hrQuestionsAccordion">
+                            <div class="accordion-body text-muted small border-top border-secondary border-opacity-10 p-4">
+                                <p class="mb-2"><strong class="text-main">Why recruiters ask this:</strong> To evaluate your self-awareness, authenticity, and commitment to active self-improvement.</p>
+                                <p class="mb-3"><strong class="text-main">What recruiters look for:</strong> Honest reflection, growth mindset examples, and actionable plans you implemented to correct it.</p>
+                                <a href="{% url 'start_interview' 'hr' %}" class="btn btn-premium btn-sm py-2 px-4 text-decoration-none">Practice This Question</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 5 -->
+                    <div class="accordion-item rounded-3 overflow-hidden border border-secondary border-opacity-10" style="background: var(--elevated-bg);">
+                        <h2 class="accordion-header" id="headingFive">
+                            <button class="accordion-button collapsed bg-transparent text-main fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                                5. Where do you see yourself in five years?
+                            </button>
+                        </h2>
+                        <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#hrQuestionsAccordion">
+                            <div class="accordion-body text-muted small border-top border-secondary border-opacity-10 p-4">
+                                <p class="mb-2"><strong class="text-main">Why recruiters ask this:</strong> To measure retention viability, career focus depth, and if your trajectory matches the team's growth.</p>
+                                <p class="mb-3"><strong class="text-main">What recruiters look for:</strong> Ambition, stability, and professional goals matching technology roles.</p>
+                                <a href="{% url 'start_interview' 'hr' %}" class="btn btn-premium btn-sm py-2 px-4 text-decoration-none">Practice This Question</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
